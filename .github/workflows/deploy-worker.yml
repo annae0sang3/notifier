@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'worker-backend/**'
+      - 'notifier-worker-backend/**'
 
 jobs:
   deploy:
@@ -17,11 +17,11 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: cd worker-backend && npm install
+        run: cd notifier-worker-backend && npm install
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: 'deploy'
-          workingDirectory: 'worker-backend'
+          workingDirectory: 'notifier-worker-backend'
