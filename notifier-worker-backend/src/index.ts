@@ -18,7 +18,10 @@ export default {
         { name: '이지수', day: '수요일' },
       ];
       return new Response(JSON.stringify(dummyData), {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'  // CORS 헤더 추가
+         },
       });
     }
 

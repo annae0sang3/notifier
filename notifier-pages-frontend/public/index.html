@@ -41,7 +41,7 @@
       dutyListDiv.innerHTML = '<p>명단을 불러오는 중...</p>';
 
       try {
-        const response = await fetch('/api/duty-list');
+        const response = await fetch('https://notifier-worker-backend.annae0sang3.workers.dev/api/duty-list');
         const dutyList = await response.json();
 
         let listHtml = '<ul>';
