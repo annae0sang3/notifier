@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'notifier-worker-backend/**'
-      - 'data/**' # data 폴더 변경 시에도 실행
+      - 'data/**'
 
 jobs:
   deploy:
@@ -18,10 +18,16 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build and package Worker
+      - name: Install dependencies and build
         run: |
           cd notifier-worker-backend
-          zip worker.zip src/worker.js
+          npm install
+          npm run build  # 이 단계에서 TypeScript를 JavaScript로 컴파일
+      
+      - name: Package Worker
+        run: |
+          cd notifier-worker-backend
+          zip worker.zip dist/index.js # dist 폴더의 index.js를 압축
 
       - name: Deploy Worker and KV Data
         run: |
@@ -66,7 +72,6 @@ jobs:
 
       - name: Set Cron Trigger
         run: |
-          # 4. Cron 트리거 설정
           curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/workers/scripts/notifier-worker-backend/schedules" \
             -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -H "Content-Type: application/json" \
