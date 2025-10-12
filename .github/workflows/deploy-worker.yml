@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'notifier-worker-backend/**'
+      - 'data/**' # data 폴더 변경 시에도 실행
 
 jobs:
   deploy:
@@ -16,12 +17,57 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install dependencies
-        run: cd notifier-worker-backend && npm install
-      - name: Deploy Worker
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: 'deploy'
-          workingDirectory: 'notifier-worker-backend'
+
+      - name: Build and package Worker
+        run: |
+          cd notifier-worker-backend
+          zip worker.zip src/worker.js
+
+      - name: Deploy Worker and KV Data
+        run: |
+          # 1. Cloudflare API를 사용해 Worker 배포
+          cd notifier-worker-backend
+          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/workers/scripts/notifier-worker-backend" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -F "metadata=@-;" -F "script=@worker.zip" <<EOF
+            {
+              "kv_namespaces": [
+                {
+                  "name": "NOTIFIER_KV",
+                  "id": "${{ secrets.KV_NAMESPACE_ID }}"
+                }
+              ],
+              "bindings": [
+                {
+                  "name": "TELEGRAM_BOT_TOKEN",
+                  "type": "secret_text",
+                  "secret": "${{ secrets.TELEGRAM_BOT_TOKEN }}"
+                },
+                {
+                  "name": "TELEGRAM_CHAT_ID",
+                  "type": "secret_text",
+                  "secret": "${{ secrets.TELEGRAM_CHAT_ID }}"
+                }
+              ]
+            }
+            EOF
+          
+          # 2. KV에 users.json 데이터 업로드
+          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/storage/kv/namespaces/${{ secrets.KV_NAMESPACE_ID }}/values/users" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data-binary "@../data/users.json"
+          
+          # 3. KV에 settings.json 데이터 업로드
+          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/storage/kv/namespaces/${{ secrets.KV_NAMESPACE_ID }}/values/settings" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data-binary "@../data/settings.json"
+
+      - name: Set Cron Trigger
+        run: |
+          # 4. Cron 트리거 설정
+          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/workers/scripts/notifier-worker-backend/schedules" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{ "schedules": [ { "cron": "0 9 * * *" } ] }'
