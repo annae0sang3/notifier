@@ -1,5 +1,4 @@
-export interface Env {
-}
+export interface Env {}
 
 export default {
   async fetch(
@@ -9,22 +8,33 @@ export default {
   ): Promise<Response> {
     const url = new URL(request.url);
 
-    // API 엔드포인트: /api/duty-list
+    // OPTIONS 프리플라이트 요청 처리
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Max-Age': '86400'
+        }
+      });
+    }
+
     if (url.pathname === '/api/duty-list') {
-      // 간단한 교대근무자 목록 반환 (예시)
       const dummyData = [
         { name: '김철수', day: '월요일' },
         { name: '박영희', day: '화요일' },
         { name: '이지수', day: '수요일' },
       ];
       return new Response(JSON.stringify(dummyData), {
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'  // CORS 헤더 추가
-         },
+          'Access-Control-Allow-Origin': '*'
+        }
       });
     }
 
     return new Response('Not Found', { status: 404 });
-  },
+  }
 };
