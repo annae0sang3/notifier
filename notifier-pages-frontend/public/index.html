@@ -154,16 +154,30 @@
     function closeSettingsModal() {
       document.getElementById('settings-modal').style.display = 'none';
     }
-    function saveDutyCycle() {
+    async function saveDutyCycle() {
       const cycle = document.getElementById('duty-cycle').value;
       const baseDate = document.getElementById('duty-base-date').value;
       const users = document.getElementById('duty-users').value;
-      // 공백 기준 분리
       const userArr = users.trim().split(/\s+/).filter(Boolean);
-      console.log('근무 주기 변경:', cycle);
-      console.log('기준일 변경:', baseDate);
-      console.log('근무자 명단 변경:', userArr);
-      alert('근무 주기: ' + cycle + '\n기준일: ' + (baseDate ? baseDate : '미입력') + '\n근무자 명단: ' + userArr.join(', '));
+      const payload = {
+        cycle,
+        baseDate,
+        users: userArr
+      };
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          alert('설정이 저장되었습니다!');
+        } else {
+          alert('설정 저장 실패: ' + res.status);
+        }
+      } catch (e) {
+        alert('설정 저장 중 오류 발생: ' + e);
+      }
       closeSettingsModal();
     }
   </script>

@@ -35,6 +35,29 @@ export default {
       });
     }
 
+    // 설정 저장 엔드포인트
+    if (url.pathname === '/api/settings' && request.method === 'POST') {
+      try {
+        const body = await request.json();
+        // 실제 저장 로직 대신 콘솔 출력 (Cloudflare Worker 환경에서는 console.log로 확인)
+        console.log('설정 저장 요청:', body);
+        return new Response(JSON.stringify({ success: true }), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ success: false, error: String(e) }), {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+      }
+    }
+
     return new Response('Not Found', { 
       status: 404,
       headers: {
