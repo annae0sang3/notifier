@@ -1,4 +1,10 @@
-export interface Env {}
+export interface Env {
+  // Cloudflare KV 바인딩 이름: SETTINGS_KV (optional)
+  SETTINGS_KV?: KVNamespace;
+}
+
+// 메모리 폴백 저장 (Worker 인스턴스 재시작 시 사라짐)
+let _inMemorySettings: Record<string, any> | null = null;
 
 export default {
   async fetch(
@@ -35,26 +41,68 @@ export default {
       });
     }
 
-    // 설정 저장 엔드포인트
-    if (url.pathname === '/api/settings' && request.method === 'POST') {
-      try {
-        const body = await request.json();
-        // 실제 저장 로직 대신 콘솔 출력 (Cloudflare Worker 환경에서는 console.log로 확인)
-        console.log('설정 저장 요청:', body);
-        return new Response(JSON.stringify({ success: true }), {
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+    // 설정 저장 엔드포인트 (POST) 및 조회 엔드포인트 (GET)
+    if (url.pathname === '/api/settings') {
+      if (request.method === 'POST') {
+        try {
+          const body = await request.json();
+          console.log('설정 저장 요청:', body);
+          // 우선 Cloudflare KV가 바인딩 되어 있으면 사용
+          try {
+            if ((env as any).SETTINGS_KV && typeof (env as any).SETTINGS_KV.put === 'function') {
+              await (env as any).SETTINGS_KV.put('settings', JSON.stringify(body));
+              console.log('Saved settings to KV');
+            } else {
+              // KV가 없으면 메모리에 저장
+              _inMemorySettings = body as any;
+              console.log('Saved settings to in-memory fallback');
+            }
+          } catch (e) {
+            console.error('Error saving settings:', e);
           }
-        });
-      } catch (e) {
-        return new Response(JSON.stringify({ success: false, error: String(e) }), {
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+
+          return new Response(JSON.stringify({ success: true }), {
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            }
+          });
+        } catch (e) {
+          return new Response(JSON.stringify({ success: false, error: String(e) }), {
+            status: 400,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            }
+          });
+        }
+      }
+
+      if (request.method === 'GET') {
+        try {
+          // KV 우선 조회
+          if ((env as any).SETTINGS_KV && typeof (env as any).SETTINGS_KV.get === 'function') {
+            const value = await (env as any).SETTINGS_KV.get('settings');
+            if (value) {
+              return new Response(value, { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+            }
           }
-        });
+
+          // KV가 없거나 값이 없으면 in-memory 폴백 반환
+          if (_inMemorySettings) {
+            return new Response(JSON.stringify(_inMemorySettings), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+          }
+
+          return new Response(JSON.stringify({}), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+        } catch (e) {
+          return new Response(JSON.stringify({ success: false, error: String(e) }), {
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            }
+          });
+        }
       }
     }
 

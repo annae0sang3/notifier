@@ -1,5 +1,6 @@
 {
 	"name": "worker-backend",
+	"type": "module",
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {

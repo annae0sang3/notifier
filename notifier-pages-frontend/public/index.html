@@ -148,8 +148,19 @@
       </div>
     </div>
   <script>
-    function openSettingsModal() {
+    async function openSettingsModal() {
       document.getElementById('settings-modal').style.display = 'flex';
+      try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.cycle) document.getElementById('duty-cycle').value = data.cycle;
+          if (data.baseDate) document.getElementById('duty-base-date').value = data.baseDate;
+          if (data.users && Array.isArray(data.users)) document.getElementById('duty-users').value = data.users.join(' ');
+        }
+      } catch (e) {
+        console.warn('설정 불러오기 실패:', e);
+      }
     }
     function closeSettingsModal() {
       document.getElementById('settings-modal').style.display = 'none';
@@ -171,14 +182,36 @@
           body: JSON.stringify(payload)
         });
         if (res.ok) {
-          alert('설정이 저장되었습니다!');
-        } else {
-          alert('설정 저장 실패: ' + res.status);
-        }
+            // 저장에 성공하면 모달을 닫기 전에 UI에 반영
+            const saved = await res.json();
+            // 간단한 상태 메시지 표시
+            showStatus('설정이 저장되었습니다');
+          } else {
+            showStatus('설정 저장 실패: ' + res.status, true);
+          }
       } catch (e) {
         alert('설정 저장 중 오류 발생: ' + e);
       }
       closeSettingsModal();
+    }
+    function showStatus(msg, isError) {
+      const elId = 'status-msg';
+      let el = document.getElementById(elId);
+      if (!el) {
+        el = document.createElement('div');
+        el.id = elId;
+        el.style.position = 'fixed';
+        el.style.left = '50%';
+        el.style.bottom = '20px';
+        el.style.transform = 'translateX(-50%)';
+        el.style.padding = '8px 12px';
+        el.style.borderRadius = '6px';
+        el.style.background = isError ? '#dc3545' : '#28a745';
+        el.style.color = '#fff';
+        document.body.appendChild(el);
+      }
+      el.textContent = msg;
+      setTimeout(() => el && el.remove(), 2000);
     }
   </script>
       <button class="button" onclick="getDutyList()">교대근무자 명단</button>

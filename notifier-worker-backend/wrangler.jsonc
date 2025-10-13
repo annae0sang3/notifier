@@ -10,6 +10,14 @@
 	"observability": {
 		"enabled": true
 	}
+	,
+	"kv_namespaces": [
+		{
+			"binding": "SETTINGS_KV",
+			"id": "__CHANGEME__",
+			"preview_id": "__CHANGEME_PREVIEW__"
+		}
+	]
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
