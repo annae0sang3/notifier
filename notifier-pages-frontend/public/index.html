@@ -4,24 +4,119 @@
   <meta charset="UTF-8">
   <title>교대 근무 알리미 미니앱</title>
   <style>
-    body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f4f4f9; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    h1 { color: #333; }
-    p { color: #666; }
-    .button-container { margin-top: 30px; }
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20px;
+      background-color: #f4f4f9;
+    }
+    .container {
+      max-width: 95vw;
+      width: 100%;
+      margin: 0 auto;
+      padding: 12px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    h1 {
+      color: #333;
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #666;
+      font-size: 1rem;
+      margin-bottom: 18px;
+    }
+    .button-container {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
     .button {
-      padding: 12px 24px;
-      font-size: 16px;
+      padding: 10px 18px;
+      font-size: 1rem;
       cursor: pointer;
       background-color: #007bff;
       color: white;
       border: none;
-      border-radius: 5px;
-      margin: 0 10px;
+      border-radius: 6px;
+      margin: 0 2px;
+      min-width: 90px;
     }
-    #duty-list { margin-top: 20px; text-align: left; }
-    #duty-list ul { list-style: none; padding: 0; }
-    #duty-list li { padding: 8px 0; border-bottom: 1px solid #eee; }
+    #duty-list {
+      margin-top: 16px;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+    #duty-list ul {
+      list-style: none;
+      padding: 0;
+    }
+    #duty-list li {
+      padding: 7px 0;
+      border-bottom: 1px solid #eee;
+    }
+    #settings-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.3);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    #settings-modal .modal-content {
+      background: #fff;
+      padding: 18px 12px;
+      border-radius: 10px;
+      min-width: 80vw;
+      max-width: 400px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      position: relative;
+    }
+    #settings-modal label {
+      font-size: 0.98rem;
+      font-weight: bold;
+      margin-bottom: 4px;
+      display: block;
+      text-align: left;
+    }
+    #settings-modal input[type="text"],
+    #settings-modal input[type="date"] {
+      width: 100%;
+      padding: 8px;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    @media (max-width: 480px) {
+      .container {
+        padding: 6px;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      #settings-modal .modal-content {
+        min-width: 96vw;
+        max-width: 96vw;
+        padding: 10px 4px;
+      }
+      h1 {
+        font-size: 1.1rem;
+      }
+      .button {
+        font-size: 0.95rem;
+        padding: 8px 10px;
+        min-width: 70px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -31,23 +126,25 @@
     <div class="button-container">
   <button class="button" onclick="openSettingsModal()">설정</button>
     <!-- 설정 모달 -->
-    <div id="settings-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000; justify-content:center; align-items:center;">
-      <div style="background:#fff; padding:30px 20px; border-radius:8px; min-width:300px; box-shadow:0 2px 8px rgba(0,0,0,0.2); position:relative;">
-        <h2 style="margin-top:0;">설정</h2>
-        <div style="margin-bottom:18px;">
-          <label for="duty-cycle" style="font-weight:bold;">근무 주기</label><br>
-          <input id="duty-cycle" type="text" value="주 주 야 야 비 비" style="width:180px; padding:8px; margin-top:6px; border-radius:4px; border:1px solid #ccc;">
+    <div id="settings-modal">
+      <div class="modal-content">
+        <h2 style="margin-top:0; font-size:1.2rem;">설정</h2>
+        <div>
+          <label for="duty-cycle">근무 주기</label>
+          <input id="duty-cycle" type="text" value="주 주 야 야 비 비" autocomplete="off">
         </div>
-        <div style="margin-bottom:18px;">
-          <label for="duty-base-date" style="font-weight:bold;">기준일</label><br>
-          <input id="duty-base-date" type="date" style="width:180px; padding:8px; margin-top:6px; border-radius:4px; border:1px solid #ccc;">
+        <div>
+          <label for="duty-base-date">기준일</label>
+          <input id="duty-base-date" type="date" autocomplete="off">
         </div>
-        <div style="margin-bottom:18px;">
-          <label for="duty-users" style="font-weight:bold;">근무자 명단 (쉼표로 구분)</label><br>
-          <input id="duty-users" type="text" value="홍길동,김철수,이영희" style="width:220px; padding:8px; margin-top:6px; border-radius:4px; border:1px solid #ccc;">
+        <div>
+          <label for="duty-users">근무자 명단 (공백으로 구분)</label>
+          <input id="duty-users" type="text" value="홍길동 김철수 이영희" autocomplete="off">
         </div>
-        <button class="button" onclick="saveDutyCycle()" style="background:#28a745; margin-right:10px;">저장</button>
-        <button class="button" onclick="closeSettingsModal()" style="background:#6c757d;">닫기</button>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <button class="button" onclick="saveDutyCycle()" style="background:#28a745;">저장</button>
+          <button class="button" onclick="closeSettingsModal()" style="background:#6c757d;">닫기</button>
+        </div>
       </div>
     </div>
   <script>
@@ -61,10 +158,12 @@
       const cycle = document.getElementById('duty-cycle').value;
       const baseDate = document.getElementById('duty-base-date').value;
       const users = document.getElementById('duty-users').value;
+      // 공백 기준 분리
+      const userArr = users.trim().split(/\s+/).filter(Boolean);
       console.log('근무 주기 변경:', cycle);
       console.log('기준일 변경:', baseDate);
-      console.log('근무자 명단 변경:', users);
-      alert('근무 주기: ' + cycle + '\n기준일: ' + (baseDate ? baseDate : '미입력') + '\n근무자 명단: ' + users);
+      console.log('근무자 명단 변경:', userArr);
+      alert('근무 주기: ' + cycle + '\n기준일: ' + (baseDate ? baseDate : '미입력') + '\n근무자 명단: ' + userArr.join(', '));
       closeSettingsModal();
     }
   </script>
