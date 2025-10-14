@@ -29,9 +29,9 @@
       flex-grow: 1;
     }
 
-    /* 헤더 스타일 */
+    /* ********** 헤더 및 월/년도 복구 ********** */
     .header {
-      padding: 15px 16px 10px 16px;
+      padding: 15px 16px 10px 16px; /* 원래 패딩 복구 */
       position: sticky;
       top: 0;
       background-color: #f6f7f8;
@@ -40,11 +40,12 @@
     .header h1 {
       font-size: 1.2rem;
       font-weight: 700;
-      margin-bottom: 20px;
+      margin-bottom: 20px; /* 원래 마진 복구 */
       color: #101922;
+      display: block; /* 제목 표시 복구 */
     }
     .month-selector {
-      display: flex;
+      display: flex; /* 월 선택기 표시 복구 */
       align-items: center;
       justify-content: center;
       margin-bottom: 10px;
@@ -62,23 +63,24 @@
       color: #101922;
       margin: 0;
     }
+    /* ****************************************** */
 
-    /* ********** 수정된 스케줄 목록 카드 스타일 (높이 추가 조정) ********** */
+    /* ********** 스케줄 목록 카드 스타일 (높이 최소화 및 글자 크기 조정) ********** */
     .schedule-list {
       padding: 0 16px;
       margin-bottom: 20px;
     }
     .schedule-card {
-      /* 1. 카드의 높이를 더 줄임 (상하 패딩 8px -> 5px) */
+      /* 카드 높이 최소화 유지: 상하 패딩 3px */
       background-color: #ffffff;
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-      margin-bottom: 10px; /* 마진도 약간 줄임 */
-      padding: 5px 12px; /* 👈 높이를 더 줄인 부분 */
+      margin-bottom: 8px;
+      padding: 3px 12px; /* 👈 최소 높이 유지 */
       display: flex;
       align-items: center;
       gap: 16px;
-      min-height: 35px; /* 최소 높이도 줄임 */
+      min-height: 0; 
     }
     .card-date {
       text-align: center;
@@ -86,14 +88,19 @@
       flex-shrink: 0;
     }
     .card-date .day-num {
-      font-size: 1.4rem; /* 날짜 글자 크기도 약간 줄임 */
+      /* 날짜 숫자 */
+      display: block; 
+      font-size: 1.2rem; 
       font-weight: 700;
       color: #101922;
-      line-height: 1;
+      line-height: 0.4; /* 👈 수정된 값 */
     }
     .card-date .day-name {
-      font-size: 0.7rem; /* 요일 글자 크기를 더 줄임 */
+      /* 요일 */
+      font-size: 0.9rem; 
+      font-weight: 600; 
       color: #6c757d;
+      line-height: 0.3; /* 👈 수정된 값 */
     }
     
     /* 당직자 표시 영역 */
@@ -116,7 +123,7 @@
     .night-shift-slot {
         width: 65%; 
         display: flex;
-        gap: 15px; 
+        gap: 20px;
         justify-content: flex-start;
         padding-left: 10px;
         border-left: 1px solid #f0f0f0;
@@ -125,13 +132,15 @@
     .duty-item {
       display: flex;
       align-items: center;
-      gap: 3px; /* 아이콘과 이름 사이 간격 줄임 */
-      font-size: 0.75rem; /* 0.85rem -> 0.75rem로 줄임 */
-      color: #555;
+      gap: 4px;
+      /* 이름 글자 크기 키움 */
+      font-size: 1rem; 
+      font-weight: 500;
+      color: #333;
       white-space: nowrap;
     }
     .duty-item .material-icons {
-      font-size: 0.9rem; /* 아이콘 크기 줄임 */
+      font-size: 1.05rem;
     }
     .duty-item.day-shift .material-icons {
       color: #ffc107;
@@ -139,10 +148,10 @@
     .duty-item.night-shift .material-icons {
       color: #5c6bc0;
     }
-    /* ********************************************* */
+    /* ************************************************* */
 
 
-    /* 하단 탭 메뉴 */
+    /* 하단 탭 메뉴 및 모달 스타일은 동일하게 유지 */
     .footer-nav {
       position: fixed;
       bottom: 0;
@@ -177,37 +186,6 @@
     .footer-nav-item.active {
       color: #137fec;
     }
-
-    /* 기존 JS/API 연결 요소 스타일 조정 */
-    #duty-list {
-      padding: 10px 20px;
-      margin-top: 0;
-      text-align: left;
-      font-size: 0.9rem;
-    }
-    #duty-list ul {
-      list-style: none;
-      padding: 0;
-      margin-top: 10px;
-      background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-    #duty-list li {
-      padding: 10px 15px;
-      border-bottom: 1px solid #eee;
-    }
-    #duty-list li:last-child {
-      border-bottom: none;
-    }
-    .status-msg {
-      padding: 8px 12px;
-      border-radius: 6px;
-      background: #28a745;
-      color: #fff;
-      font-size: 0.9rem;
-    }
-
     /* 설정 모달 스타일 */
     #settings-modal {
       display: none;
@@ -227,21 +205,6 @@
       width: 90%;
       max-width: 400px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    }
-    #settings-modal h2 {
-      color: #101922;
-      margin-top: 0;
-      margin-bottom: 15px;
-      font-size: 1.3rem;
-      font-weight: 600;
-    }
-    #settings-modal label {
-      color: #555;
-      font-weight: normal;
-    }
-    #settings-modal input {
-      background-color: #f8f8f8;
-      border: 1px solid #ddd;
     }
     .button {
         background-color: #137fec;
@@ -430,21 +393,17 @@
     /*
       **주의:** 아래 JavaScript 함수들은 기존 HTML에서 백엔드(워커)와 연결되는 로직이므로,
       변수명, API 호출 경로, 데이터 처리 방식 등을 수정하지 않고 그대로 유지합니다.
-      새로 추가된 showScheduleView()는 UI 변경을 위한 함수입니다.
     */
 
-    // UI 변경을 위한 함수 (명단 리스트 대신 스케줄 목록을 보여주는 역할)
     function showScheduleView() {
         document.querySelector('.footer-nav-item.active').classList.remove('active');
         document.querySelector('.footer-nav-item:nth-child(1)').classList.add('active');
         
-        // 기존 getDutyList() 호출로 인한 명단 영역 초기화
         document.getElementById('duty-list').innerHTML = '';
     }
 
 
     async function openSettingsModal() {
-      // 탭 활성화/비활성화
       document.querySelector('.footer-nav-item.active').classList.remove('active');
       document.querySelector('.footer-nav-item:nth-child(2)').classList.add('active');
       
@@ -463,7 +422,6 @@
     }
     function closeSettingsModal() {
       document.getElementById('settings-modal').style.display = 'none';
-      // 모달 닫으면 Schedule 탭으로 돌아가도록 설정 (UX 개선)
       showScheduleView();
     }
     async function saveDutyCycle() {
@@ -483,9 +441,7 @@
           body: JSON.stringify(payload)
         });
         if (res.ok) {
-            // 저장에 성공하면 모달을 닫기 전에 UI에 반영
             const saved = await res.json();
-            // 간단한 상태 메시지 표시
             showStatus('설정이 저장되었습니다');
           } else {
             showStatus('설정 저장 실패: ' + res.status, true);
@@ -503,7 +459,7 @@
         el.id = elId;
         el.style.position = 'fixed';
         el.style.left = '50%';
-        el.style.bottom = '80px'; /* 탭 위로 표시 */
+        el.style.bottom = '80px';
         el.style.transform = 'translateX(-50%)';
         el.style.padding = '8px 12px';
         el.style.borderRadius = '6px';
@@ -516,7 +472,7 @@
       setTimeout(() => el && el.remove(), 2000);
     }
     
-    // 기존 '교대근무자 명단' 버튼의 로직 (API 연동 유지)
+    // API 연동 로직 유지
     async function getDutyList() {
       const dutyListDiv = document.getElementById('duty-list');
       dutyListDiv.innerHTML = '<p style="text-align:center; color:#6c757d; padding:15px;">명단을 불러오는 중...</p>';
