@@ -63,22 +63,22 @@
       margin: 0;
     }
 
-    /* ********** 수정된 스케줄 목록 카드 스타일 ********** */
+    /* ********** 수정된 스케줄 목록 카드 스타일 (높이 추가 조정) ********** */
     .schedule-list {
       padding: 0 16px;
       margin-bottom: 20px;
     }
     .schedule-card {
-      /* 1. 카드의 높이를 반으로 줄임 (padding 12px -> 8px) */
+      /* 1. 카드의 높이를 더 줄임 (상하 패딩 8px -> 5px) */
       background-color: #ffffff;
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-      margin-bottom: 12px;
-      padding: 8px 12px; /* 높이 감소 */
+      margin-bottom: 10px; /* 마진도 약간 줄임 */
+      padding: 5px 12px; /* 👈 높이를 더 줄인 부분 */
       display: flex;
       align-items: center;
       gap: 16px;
-      min-height: 40px; /* 최소 높이 설정 */
+      min-height: 35px; /* 최소 높이도 줄임 */
     }
     .card-date {
       text-align: center;
@@ -86,17 +86,17 @@
       flex-shrink: 0;
     }
     .card-date .day-num {
-      font-size: 1.5rem;
+      font-size: 1.4rem; /* 날짜 글자 크기도 약간 줄임 */
       font-weight: 700;
       color: #101922;
       line-height: 1;
     }
     .card-date .day-name {
-      font-size: 0.75rem; /* 0.8rem -> 0.75rem */
+      font-size: 0.7rem; /* 요일 글자 크기를 더 줄임 */
       color: #6c757d;
     }
     
-    /* 2 & 3. 당직자 표시 위치 조정 */
+    /* 당직자 표시 영역 */
     .card-duties {
       flex-grow: 1;
       display: flex;
@@ -106,35 +106,32 @@
       height: 100%;
     }
     
-    /* 주간 당직자 표시 영역 (좌측) */
     .day-shift-slot {
-        width: 35%; /* 공간 할당 */
+        width: 35%; 
         text-align: left;
         display: flex;
         align-items: center;
-        /* 주간 당직자가 없는 경우 비어 있게 함 */
     }
     
-    /* 야간 당직자 표시 영역 (중간부터 시작, 2명 표시) */
     .night-shift-slot {
-        width: 65%; /* 나머지 공간 할당 */
+        width: 65%; 
         display: flex;
-        gap: 15px; /* 야간 당직자 사이 간격 */
+        gap: 15px; 
         justify-content: flex-start;
-        padding-left: 10px; /* 중앙 시작을 위한 약간의 여백 */
+        padding-left: 10px;
         border-left: 1px solid #f0f0f0;
     }
 
     .duty-item {
       display: flex;
       align-items: center;
-      gap: 5px;
-      font-size: 0.85rem; /* 0.9rem -> 0.85rem로 약간 줄임 */
+      gap: 3px; /* 아이콘과 이름 사이 간격 줄임 */
+      font-size: 0.75rem; /* 0.85rem -> 0.75rem로 줄임 */
       color: #555;
       white-space: nowrap;
     }
     .duty-item .material-icons {
-      font-size: 1rem;
+      font-size: 0.9rem; /* 아이콘 크기 줄임 */
     }
     .duty-item.day-shift .material-icons {
       color: #ffc107;
@@ -521,8 +518,6 @@
     
     // 기존 '교대근무자 명단' 버튼의 로직 (API 연동 유지)
     async function getDutyList() {
-      // getDutyList()는 Schedule 탭에서 호출되지 않도록 했으므로,
-      // 이 함수는 '교대근무자 명단' 버튼이 있었다면 수행했을 API 호출 로직만 유지합니다.
       const dutyListDiv = document.getElementById('duty-list');
       dutyListDiv.innerHTML = '<p style="text-align:center; color:#6c757d; padding:15px;">명단을 불러오는 중...</p>';
 
