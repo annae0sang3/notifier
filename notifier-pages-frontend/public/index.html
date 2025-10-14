@@ -12,12 +12,12 @@
       text-align: center;
       padding: 0;
       margin: 0;
-      background-color: #f6f7f8; /* 배경색 밝게 */
+      background-color: #f6f7f8;
       color: #333;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      padding-bottom: 60px; /* 하단 탭 공간 확보 */
+      padding-bottom: 60px;
     }
     .container {
       max-width: 450px;
@@ -36,11 +36,6 @@
       top: 0;
       background-color: #f6f7f8;
       z-index: 10;
-    }
-    .header-nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
     }
     .header h1 {
       font-size: 1.2rem;
@@ -68,20 +63,22 @@
       margin: 0;
     }
 
-    /* 스케줄 목록 카드 스타일 */
+    /* ********** 수정된 스케줄 목록 카드 스타일 ********** */
     .schedule-list {
       padding: 0 16px;
       margin-bottom: 20px;
     }
     .schedule-card {
+      /* 1. 카드의 높이를 반으로 줄임 (padding 12px -> 8px) */
       background-color: #ffffff;
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
       margin-bottom: 12px;
-      padding: 12px;
+      padding: 8px 12px; /* 높이 감소 */
       display: flex;
       align-items: center;
       gap: 16px;
+      min-height: 40px; /* 최소 높이 설정 */
     }
     .card-date {
       text-align: center;
@@ -95,20 +92,44 @@
       line-height: 1;
     }
     .card-date .day-name {
-      font-size: 0.8rem;
+      font-size: 0.75rem; /* 0.8rem -> 0.75rem */
       color: #6c757d;
     }
+    
+    /* 2 & 3. 당직자 표시 위치 조정 */
     .card-duties {
       flex-grow: 1;
       display: flex;
-      gap: 15px;
-      justify-content: flex-end; /* 기본적으로 오른쪽 정렬 */
+      gap: 0;
+      justify-content: flex-start;
+      align-items: center;
+      height: 100%;
     }
+    
+    /* 주간 당직자 표시 영역 (좌측) */
+    .day-shift-slot {
+        width: 35%; /* 공간 할당 */
+        text-align: left;
+        display: flex;
+        align-items: center;
+        /* 주간 당직자가 없는 경우 비어 있게 함 */
+    }
+    
+    /* 야간 당직자 표시 영역 (중간부터 시작, 2명 표시) */
+    .night-shift-slot {
+        width: 65%; /* 나머지 공간 할당 */
+        display: flex;
+        gap: 15px; /* 야간 당직자 사이 간격 */
+        justify-content: flex-start;
+        padding-left: 10px; /* 중앙 시작을 위한 약간의 여백 */
+        border-left: 1px solid #f0f0f0;
+    }
+
     .duty-item {
       display: flex;
       align-items: center;
       gap: 5px;
-      font-size: 0.9rem;
+      font-size: 0.85rem; /* 0.9rem -> 0.85rem로 약간 줄임 */
       color: #555;
       white-space: nowrap;
     }
@@ -116,11 +137,13 @@
       font-size: 1rem;
     }
     .duty-item.day-shift .material-icons {
-      color: #ffc107; /* Yellow for sun */
+      color: #ffc107;
     }
     .duty-item.night-shift .material-icons {
-      color: #5c6bc0; /* Indigo/Blue for moon */
+      color: #5c6bc0;
     }
+    /* ********************************************* */
+
 
     /* 하단 탭 메뉴 */
     .footer-nav {
@@ -155,7 +178,7 @@
       margin-bottom: 2px;
     }
     .footer-nav-item.active {
-      color: #137fec; /* Primary blue for active tab */
+      color: #137fec;
     }
 
     /* 기존 JS/API 연결 요소 스타일 조정 */
@@ -187,11 +210,8 @@
       color: #fff;
       font-size: 0.9rem;
     }
-    .status-msg-error {
-      background: #dc3545;
-    }
 
-    /* 설정 모달 스타일 (밝은 테마에 맞게 조정) */
+    /* 설정 모달 스타일 */
     #settings-modal {
       display: none;
       position: fixed;
@@ -226,16 +246,15 @@
       background-color: #f8f8f8;
       border: 1px solid #ddd;
     }
-    #settings-modal .button {
-      padding: 10px 15px;
-      border-radius: 6px;
-      min-width: unset;
-      font-size: 1rem;
-    }
-    /* 버튼 스타일 조정 (기존 버튼 클래스 재사용) */
     .button {
         background-color: #137fec;
         color: white;
+        padding: 10px 15px;
+        border-radius: 6px;
+        min-width: unset;
+        font-size: 1rem;
+        border: none;
+        cursor: pointer;
     }
     .button[onclick="saveDutyCycle()"] {
         background-color: #28a745 !important;
@@ -243,7 +262,6 @@
     .button[onclick="closeSettingsModal()"] {
         background-color: #6c757d !important;
     }
-
   </style>
 </head>
 <body>
@@ -259,80 +277,121 @@
     </div>
 
     <div id="main-content" class="schedule-list">
+        
         <div class="schedule-card">
             <div class="card-date"><p class="day-num">01</p><p class="day-name">Mon</p></div>
             <div class="card-duties">
-                <div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>Ethan</span></div>
+                <div class="day-shift-slot">
+                    <div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>Ethan</span></div>
+                </div>
+                <div class="night-shift-slot">
+                    </div>
             </div>
         </div>
         <div class="schedule-card">
             <div class="card-date"><p class="day-num">02</p><p class="day-name">Tue</p></div>
             <div class="card-duties">
-                <div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>Olivia</span></div>
+                <div class="day-shift-slot">
+                    <div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>Olivia</span></div>
+                </div>
+                <div class="night-shift-slot">
+                    </div>
             </div>
         </div>
         <div class="schedule-card">
             <div class="card-date"><p class="day-num">03</p><p class="day-name">Wed</p></div>
             <div class="card-duties">
-                <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Mia</span></div>
-                <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Amelia</span></div>
+                <div class="day-shift-slot">
+                    </div>
+                <div class="night-shift-slot">
+                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Mia</span></div>
+                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Amelia</span></div>
+                </div>
             </div>
         </div>
         <div class="schedule-card">
             <div class="card-date"><p class="day-num">04</p><p class="day-name">Thu</p></div>
             <div class="card-duties">
-                <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Noah</span></div>
-                <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Liam</span></div>
+                <div class="day-shift-slot">
+                    </div>
+                <div class="night-shift-slot">
+                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Noah</span></div>
+                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Liam</span></div>
+                </div>
             </div>
         </div>
         <div class="schedule-card">
             <div class="card-date"><p class="day-num">05</p><p class="day-name">Fri</p></div>
-            <div class="card-duties"></div>
+            <div class="card-duties">
+                <div class="day-shift-slot"></div>
+                <div class="night-shift-slot"></div>
+            </div>
         </div>
         <div class="schedule-card">
             <div class="card-date"><p class="day-num">06</p><p class="day-name">Sat</p></div>
-            <div class="card-duties"></div>
+            <div class="card-duties">
+                <div class="day-shift-slot"></div>
+                <div class="night-shift-slot"></div>
+            </div>
         </div>
         <div class="schedule-card">
             <div class="card-date"><p class="day-num">07</p><p class="day-name">Sun</p></div>
             <div class="card-duties">
-                <div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>Sophia</span></div>
+                <div class="day-shift-slot">
+                    <div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>Sophia</span></div>
+                </div>
+                <div class="night-shift-slot"></div>
             </div>
         </div>
         <div class="schedule-card">
             <div class="card-date"><p class="day-num">08</p><p class="day-name">Mon</p></div>
             <div class="card-duties">
-                <div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>Ava</span></div>
+                <div class="day-shift-slot">
+                    <div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>Ava</span></div>
+                </div>
+                <div class="night-shift-slot"></div>
             </div>
         </div>
         <div class="schedule-card">
             <div class="card-date"><p class="day-num">09</p><p class="day-name">Tue</p></div>
             <div class="card-duties">
-                <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Isabella</span></div>
-                <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Mia</span></div>
+                <div class="day-shift-slot"></div>
+                <div class="night-shift-slot">
+                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Isabella</span></div>
+                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Mia</span></div>
+                </div>
             </div>
         </div>
         <div class="schedule-card">
             <div class="card-date"><p class="day-num">10</p><p class="day-name">Wed</p></div>
             <div class="card-duties">
-                <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Amelia</span></div>
-                <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Ethan</span></div>
+                <div class="day-shift-slot"></div>
+                <div class="night-shift-slot">
+                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Amelia</span></div>
+                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Ethan</span></div>
+                </div>
             </div>
         </div>
         <div class="schedule-card">
             <div class="card-date"><p class="day-num">11</p><p class="day-name">Thu</p></div>
-            <div class="card-duties"></div>
+            <div class="card-duties">
+                <div class="day-shift-slot"></div>
+                <div class="night-shift-slot"></div>
+            </div>
         </div>
         <div class="schedule-card">
             <div class="card-date"><p class="day-num">12</p><p class="day-name">Fri</p></div>
-            <div class="card-duties"></div>
+            <div class="card-duties">
+                <div class="day-shift-slot"></div>
+                <div class="night-shift-slot"></div>
+            </div>
         </div>
         
         <div id="duty-list"></div>
     </div>
     
     <div class="button-container" style="display: none;">
-      </div>
+    </div>
 
 
     <div id="settings-modal">
@@ -379,26 +438,11 @@
 
     // UI 변경을 위한 함수 (명단 리스트 대신 스케줄 목록을 보여주는 역할)
     function showScheduleView() {
-        // 실제 스케줄 목록을 보여주려면 동적인 렌더링 로직이 필요하지만,
-        // 현재는 getDutyList() 함수가 명단을 불러와서 duty-list 영역에 표시하는 것이
-        // 기존 백엔드 연동 로직이므로, 해당 함수를 호출하고 스케줄 카드는 그대로 표시합니다.
-        
-        // 기존 명단 표시를 위한 getDutyList() 함수 호출 유지
-        // getDutyList(); 
-        
-        // 실제로는 이 함수가 스케줄 목록 카드를 표시하고,
-        // getDutyList()는 임시로 명단 목록을 표시하는 용도로 사용됩니다.
-        // 여기서는 명단 호출은 필요 없고 UI 전환만 하므로, getDutyList()는 호출하지 않습니다.
-        
-        // 탭 활성화/비활성화
         document.querySelector('.footer-nav-item.active').classList.remove('active');
         document.querySelector('.footer-nav-item:nth-child(1)').classList.add('active');
         
-        // 명단 영역 숨기기 (스케줄 카드만 보이도록)
+        // 기존 getDutyList() 호출로 인한 명단 영역 초기화
         document.getElementById('duty-list').innerHTML = '';
-        
-        // 스케줄 카드를 포함하는 main-content 영역을 보이게 설정 (이미 기본적으로 보임)
-        document.getElementById('main-content').style.display = 'block';
     }
 
 
@@ -475,13 +519,11 @@
       setTimeout(() => el && el.remove(), 2000);
     }
     
-    // 이 함수는 기존 '교대근무자 명단' 버튼을 대체하는 기능으로, 
-    // 현재 UI 디자인과 기능상 충돌이 있으나, 기존 백엔드 로직 유지를 위해 그대로 둡니다.
-    // 'Schedule' 탭 클릭 시 명단이 표시됩니다.
+    // 기존 '교대근무자 명단' 버튼의 로직 (API 연동 유지)
     async function getDutyList() {
+      // getDutyList()는 Schedule 탭에서 호출되지 않도록 했으므로,
+      // 이 함수는 '교대근무자 명단' 버튼이 있었다면 수행했을 API 호출 로직만 유지합니다.
       const dutyListDiv = document.getElementById('duty-list');
-      // 명단 표시 전에 기존 스케줄 카드 목록을 숨기거나/스크롤 아래로 내릴 필요가 있으나,
-      // 기존 명단 표시 로직을 위해 'duty-list' 영역에 명단을 표시합니다.
       dutyListDiv.innerHTML = '<p style="text-align:center; color:#6c757d; padding:15px;">명단을 불러오는 중...</p>';
 
       try {
