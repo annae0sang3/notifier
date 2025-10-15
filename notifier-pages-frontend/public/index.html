@@ -6,7 +6,7 @@
   <title>On-Call Schedule</title>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
-    /* 전체 레이아웃 및 폰트 변경 */
+    /* (CSS 부분은 변경 없음) */
     body {
       font-family: 'Inter', 'SF Pro Display', sans-serif;
       text-align: center;
@@ -29,9 +29,8 @@
       flex-grow: 1;
     }
 
-    /* ********** 헤더 및 월/년도 복구 ********** */
     .header {
-      padding: 15px 16px 10px 16px; /* 원래 패딩 복구 */
+      padding: 15px 16px 10px 16px; 
       position: sticky;
       top: 0;
       background-color: #f6f7f8;
@@ -40,12 +39,12 @@
     .header h1 {
       font-size: 1.2rem;
       font-weight: 700;
-      margin-bottom: 20px; /* 원래 마진 복구 */
+      margin-bottom: 20px; 
       color: #101922;
-      display: block; /* 제목 표시 복구 */
+      display: block;
     }
     .month-selector {
-      display: flex; /* 월 선택기 표시 복구 */
+      display: flex; 
       align-items: center;
       justify-content: center;
       margin-bottom: 10px;
@@ -63,20 +62,18 @@
       color: #101922;
       margin: 0;
     }
-    /* ****************************************** */
 
-    /* ********** 스케줄 목록 카드 스타일 (높이 최소화 및 글자 크기 조정) ********** */
     .schedule-list {
       padding: 0 16px;
       margin-bottom: 20px;
+      min-height: 200px; /* 로딩 스페이스 확보 */
     }
     .schedule-card {
-      /* 카드 높이 최소화 유지: 상하 패딩 3px */
       background-color: #ffffff;
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
       margin-bottom: 8px;
-      padding: 3px 12px; /* 👈 최소 높이 유지 */
+      padding: 3px 12px;
       display: flex;
       align-items: center;
       gap: 16px;
@@ -88,22 +85,19 @@
       flex-shrink: 0;
     }
     .card-date .day-num {
-      /* 날짜 숫자 */
       display: block; 
       font-size: 1.2rem; 
       font-weight: 700;
       color: #101922;
-      line-height: 0.4; /* 👈 수정된 값 */
+      line-height: 0.4;
     }
     .card-date .day-name {
-      /* 요일 */
       font-size: 0.9rem; 
       font-weight: 600; 
       color: #6c757d;
-      line-height: 0.3; /* 👈 수정된 값 */
+      line-height: 0.3;
     }
     
-    /* 당직자 표시 영역 */
     .card-duties {
       flex-grow: 1;
       display: flex;
@@ -133,7 +127,6 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      /* 이름 글자 크기 키움 */
       font-size: 1rem; 
       font-weight: 500;
       color: #333;
@@ -148,8 +141,6 @@
     .duty-item.night-shift .material-icons {
       color: #5c6bc0;
     }
-    /* ************************************************* */
-
 
     /* 하단 탭 메뉴 및 모달 스타일은 동일하게 유지 */
     .footer-nav {
@@ -230,129 +221,17 @@
     <div class="header">
         <h1 class="text-xl font-bold text-center">On-Call Schedule</h1>
         <div class="month-selector">
-            <span class="arrow material-icons">chevron_left</span>
-            <h2>January 2024</h2>
-            <span class="arrow material-icons">chevron_right</span>
+            <span class="arrow material-icons" onclick="prevMonth()">chevron_left</span>
+            <h2 id="current-month-year">Month Year</h2>
+            <span class="arrow material-icons" onclick="nextMonth()">chevron_right</span>
         </div>
     </div>
 
     <div id="main-content" class="schedule-list">
-        
-        <div class="schedule-card">
-            <div class="card-date"><p class="day-num">01</p><p class="day-name">Mon</p></div>
-            <div class="card-duties">
-                <div class="day-shift-slot">
-                    <div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>Ethan</span></div>
-                </div>
-                <div class="night-shift-slot">
-                    </div>
-            </div>
         </div>
-        <div class="schedule-card">
-            <div class="card-date"><p class="day-num">02</p><p class="day-name">Tue</p></div>
-            <div class="card-duties">
-                <div class="day-shift-slot">
-                    <div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>Olivia</span></div>
-                </div>
-                <div class="night-shift-slot">
-                    </div>
-            </div>
-        </div>
-        <div class="schedule-card">
-            <div class="card-date"><p class="day-num">03</p><p class="day-name">Wed</p></div>
-            <div class="card-duties">
-                <div class="day-shift-slot">
-                    </div>
-                <div class="night-shift-slot">
-                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Mia</span></div>
-                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Amelia</span></div>
-                </div>
-            </div>
-        </div>
-        <div class="schedule-card">
-            <div class="card-date"><p class="day-num">04</p><p class="day-name">Thu</p></div>
-            <div class="card-duties">
-                <div class="day-shift-slot">
-                    </div>
-                <div class="night-shift-slot">
-                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Noah</span></div>
-                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Liam</span></div>
-                </div>
-            </div>
-        </div>
-        <div class="schedule-card">
-            <div class="card-date"><p class="day-num">05</p><p class="day-name">Fri</p></div>
-            <div class="card-duties">
-                <div class="day-shift-slot"></div>
-                <div class="night-shift-slot"></div>
-            </div>
-        </div>
-        <div class="schedule-card">
-            <div class="card-date"><p class="day-num">06</p><p class="day-name">Sat</p></div>
-            <div class="card-duties">
-                <div class="day-shift-slot"></div>
-                <div class="night-shift-slot"></div>
-            </div>
-        </div>
-        <div class="schedule-card">
-            <div class="card-date"><p class="day-num">07</p><p class="day-name">Sun</p></div>
-            <div class="card-duties">
-                <div class="day-shift-slot">
-                    <div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>Sophia</span></div>
-                </div>
-                <div class="night-shift-slot"></div>
-            </div>
-        </div>
-        <div class="schedule-card">
-            <div class="card-date"><p class="day-num">08</p><p class="day-name">Mon</p></div>
-            <div class="card-duties">
-                <div class="day-shift-slot">
-                    <div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>Ava</span></div>
-                </div>
-                <div class="night-shift-slot"></div>
-            </div>
-        </div>
-        <div class="schedule-card">
-            <div class="card-date"><p class="day-num">09</p><p class="day-name">Tue</p></div>
-            <div class="card-duties">
-                <div class="day-shift-slot"></div>
-                <div class="night-shift-slot">
-                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Isabella</span></div>
-                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Mia</span></div>
-                </div>
-            </div>
-        </div>
-        <div class="schedule-card">
-            <div class="card-date"><p class="day-num">10</p><p class="day-name">Wed</p></div>
-            <div class="card-duties">
-                <div class="day-shift-slot"></div>
-                <div class="night-shift-slot">
-                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Amelia</span></div>
-                    <div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>Ethan</span></div>
-                </div>
-            </div>
-        </div>
-        <div class="schedule-card">
-            <div class="card-date"><p class="day-num">11</p><p class="day-name">Thu</p></div>
-            <div class="card-duties">
-                <div class="day-shift-slot"></div>
-                <div class="night-shift-slot"></div>
-            </div>
-        </div>
-        <div class="schedule-card">
-            <div class="card-date"><p class="day-num">12</p><p class="day-name">Fri</p></div>
-            <div class="card-duties">
-                <div class="day-shift-slot"></div>
-                <div class="night-shift-slot"></div>
-            </div>
-        </div>
-        
-        <div id="duty-list"></div>
-    </div>
     
-    <div class="button-container" style="display: none;">
-    </div>
-
+    <div id="duty-list"></div>
+    <div class="button-container" style="display: none;"></div>
 
     <div id="settings-modal">
       <div class="modal-content">
@@ -390,18 +269,118 @@
 
 
   <script>
-    /*
-      **주의:** 아래 JavaScript 함수들은 기존 HTML에서 백엔드(워커)와 연결되는 로직이므로,
-      변수명, API 호출 경로, 데이터 처리 방식 등을 수정하지 않고 그대로 유지합니다.
-    */
+    // 현재 표시할 월/연도를 저장하는 Date 객체 (오늘 날짜로 초기화)
+    let currentDate = new Date();
+    const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const WORKER_API_BASE = '/api'; // 같은 도메인 내의 상대 경로 사용
 
+    function updateMonthHeader() {
+        const monthYearEl = document.getElementById('current-month-year');
+        monthYearEl.textContent = `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    }
+
+    function getDaysInMonth(date) {
+        // 다음 달의 0일은 현재 달의 마지막 날을 나타냄
+        return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    }
+
+    function prevMonth() {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        updateMonthHeader();
+        renderSchedule();
+    }
+    
+    function nextMonth() {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        updateMonthHeader();
+        renderSchedule();
+    }
+    
+    function createDutyCard(dayNum, dayName, dayDuty, nightDuty) {
+        const nightShiftItems = nightDuty.map(name => 
+            `<div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>${name}</span></div>`
+        ).join('');
+
+        const dayShiftItem = dayDuty.length > 0 
+            ? `<div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>${dayDuty[0]}</span></div>`
+            : '';
+            
+        return `
+            <div class="schedule-card">
+                <div class="card-date"><p class="day-num">${String(dayNum).padStart(2, '0')}</p><p class="day-name">${dayName}</p></div>
+                <div class="card-duties">
+                    <div class="day-shift-slot">${dayShiftItem}</div>
+                    <div class="night-shift-slot">${nightShiftItems}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    async function renderSchedule() {
+        updateMonthHeader();
+        const scheduleListDiv = document.getElementById('main-content');
+        scheduleListDiv.innerHTML = '<p style="text-align:center; color:#6c757d; padding:15px;">스케줄을 불러오는 중...</p>';
+
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1; // 1-based month
+
+        try {
+            // Worker에 요청할 날짜 범위
+            const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+            const endDate = `${year}-${String(month).padStart(2, '0')}-${String(getDaysInMonth(currentDate)).padStart(2, '0')}`;
+
+            const response = await fetch(`${WORKER_API_BASE}/schedule?start=${startDate}&end=${endDate}`);
+            
+            if (!response.ok) {
+                 throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const scheduleData = await response.json();
+            
+            if (!scheduleData || scheduleData.length === 0) {
+                scheduleListDiv.innerHTML = '<p style="text-align:center; color:#6c757d; padding:15px;">해당 월의 스케줄 정보가 없습니다.</p>';
+                return;
+            }
+
+            let cardsHtml = '';
+            scheduleData.forEach(item => {
+                const dateObj = new Date(item.date);
+                const dayNum = dateObj.getDate();
+                const dayName = DAYS[dateObj.getDay()];
+                
+                // duty: { day: ["이름"], night: ["이름", "이름"] } 형태라고 가정
+                const dayDuty = item.duty.day || [];
+                const nightDuty = item.duty.night || [];
+
+                cardsHtml += createDutyCard(dayNum, dayName, dayDuty, nightDuty);
+            });
+
+            scheduleListDiv.innerHTML = cardsHtml;
+
+        } catch (error) {
+            console.error('Error fetching schedule:', error);
+            scheduleListDiv.innerHTML = `<p style="text-align:center; color:#dc3545; padding:15px;">스케줄을 불러오는 데 실패했습니다. (${error.message})</p>`;
+        }
+    }
+    
+    // 페이지 로드 시 초기 스케줄 렌더링 및 헤더 업데이트
+    document.addEventListener('DOMContentLoaded', () => {
+        updateMonthHeader();
+        renderSchedule();
+        
+        // 기존 API 연동 로직 유지 (사용되지 않음)
+        // getDutyList();
+    });
+
+    /* 기존 JS 함수 (API 경로 및 로직은 유지) */
     function showScheduleView() {
         document.querySelector('.footer-nav-item.active').classList.remove('active');
         document.querySelector('.footer-nav-item:nth-child(1)').classList.add('active');
         
+        // 스케줄 뷰로 돌아오면 duty-list는 비웁니다.
         document.getElementById('duty-list').innerHTML = '';
     }
-
 
     async function openSettingsModal() {
       document.querySelector('.footer-nav-item.active').classList.remove('active');
@@ -409,7 +388,7 @@
       
       document.getElementById('settings-modal').style.display = 'flex';
       try {
-        const res = await fetch('/api/settings');
+        const res = await fetch(`${WORKER_API_BASE}/settings`);
         if (res.ok) {
           const data = await res.json();
           if (data.cycle) document.getElementById('duty-cycle').value = data.cycle;
@@ -423,6 +402,8 @@
     function closeSettingsModal() {
       document.getElementById('settings-modal').style.display = 'none';
       showScheduleView();
+      // 설정 저장 후 스케줄 새로고침
+      renderSchedule(); 
     }
     async function saveDutyCycle() {
       const cycle = document.getElementById('duty-cycle').value;
@@ -435,7 +416,7 @@
         users: userArr
       };
       try {
-        const res = await fetch('/api/settings', {
+        const res = await fetch(`${WORKER_API_BASE}/settings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -472,15 +453,13 @@
       setTimeout(() => el && el.remove(), 2000);
     }
     
-    // API 연동 로직 유지
+    // 기존 API 연동 로직은 이제 사용하지 않음 (더미 데이터)
     async function getDutyList() {
       const dutyListDiv = document.getElementById('duty-list');
       dutyListDiv.innerHTML = '<p style="text-align:center; color:#6c757d; padding:15px;">명단을 불러오는 중...</p>';
-
       try {
         const response = await fetch('https://notifier-worker-backend.annae0sang3.workers.dev/api/duty-list');
         const dutyList = await response.json();
-
         let listHtml = '<ul>';
         dutyList.forEach(item => {
           listHtml += `<li>${item.day}: ${item.name}</li>`;
@@ -490,7 +469,6 @@
             <h3 style="font-size:1.1rem; font-weight:600; padding:10px 0; border-bottom:1px solid #eee; margin-bottom:10px;">교대근무자 명단 (API 결과)</h3>
             ${listHtml}
         `;
-
       } catch (error) {
         console.error('Error fetching duty list:', error);
         dutyListDiv.innerHTML = '<p style="text-align:center; color:#dc3545; padding:15px;">명단을 불러오는 데 실패했습니다.</p>';
