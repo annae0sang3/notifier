@@ -297,12 +297,12 @@
         renderSchedule();
     }
     
-    function createDutyCard(dayNum, dayName, dayDuty, nightDuty) {
-        const nightShiftItems = nightDuty.map(name => 
+    function createDutyCard(dayNum, dayName, dayDuty = [], nightDuty = []) {
+        const nightShiftItems = (nightDuty || []).map(name => 
             `<div class="duty-item night-shift"><span class="material-icons">dark_mode</span><span>${name}</span></div>`
         ).join('');
 
-        const dayShiftItem = dayDuty.length > 0 
+        const dayShiftItem = (dayDuty && dayDuty.length > 0) 
             ? `<div class="duty-item day-shift"><span class="material-icons">light_mode</span><span>${dayDuty[0]}</span></div>`
             : '';
             
@@ -315,6 +315,19 @@
                 </div>
             </div>
         `;
+    }
+
+    // 새로 추가: 특정 월의 날짜 카드(스케일백업)만 생성하여 렌더링
+    function renderDateOnlyCards() {
+        const scheduleListDiv = document.getElementById('main-content');
+        const daysCount = getDaysInMonth(currentDate);
+        let cardsHtml = '';
+        for (let d = 1; d <= daysCount; d++) {
+            const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
+            const dayName = DAYS[dateObj.getDay()];
+            cardsHtml += createDutyCard(d, dayName, [], []);
+        }
+        scheduleListDiv.innerHTML = cardsHtml;
     }
 
     async function renderSchedule() {
@@ -333,13 +346,18 @@
             const response = await fetch(`${WORKER_API_BASE}/schedule?start=${startDate}&end=${endDate}`);
             
             if (!response.ok) {
-                 throw new Error(`HTTP error! status: ${response.status}`);
+                 // 서버 응답이 정상이 아닌 경우: 날짜 카드만 표시하고 토스트로 알림
+                 renderDateOnlyCards();
+                 showStatus(`스케줄 로드 실패: HTTP ${response.status}`, true);
+                 return;
             }
 
             const scheduleData = await response.json();
             
             if (!scheduleData || scheduleData.length === 0) {
-                scheduleListDiv.innerHTML = '<p style="text-align:center; color:#6c757d; padding:15px;">해당 월의 스케줄 정보가 없습니다.</p>';
+                // 스케줄 데이터가 비어있을 때도 날짜 카드만 표시하고 사용자에게 알림
+                renderDateOnlyCards();
+                showStatus('해당 월의 스케줄 정보가 없습니다.', true);
                 return;
             }
 
@@ -350,8 +368,8 @@
                 const dayName = DAYS[dateObj.getDay()];
                 
                 // duty: { day: ["이름"], night: ["이름", "이름"] } 형태라고 가정
-                const dayDuty = item.duty.day || [];
-                const nightDuty = item.duty.night || [];
+                const dayDuty = item.duty && item.duty.day ? item.duty.day : [];
+                const nightDuty = item.duty && item.duty.night ? item.duty.night : [];
 
                 cardsHtml += createDutyCard(dayNum, dayName, dayDuty, nightDuty);
             });
@@ -360,7 +378,9 @@
 
         } catch (error) {
             console.error('Error fetching schedule:', error);
-            scheduleListDiv.innerHTML = `<p style="text-align:center; color:#dc3545; padding:15px;">스케줄을 불러오는 데 실패했습니다. (${error.message})</p>`;
+            // 통신 에러나 예외 발생 시: 날짜 카드만 표시하고 에러 토스트
+            renderDateOnlyCards();
+            showStatus(`스케줄을 불러오는 데 실패했습니다. (${error.message})`, true);
         }
     }
     
@@ -397,6 +417,7 @@
         }
       } catch (e) {
         console.warn('설정 불러오기 실패:', e);
+        showStatus('설정 로드 실패', true);
       }
     }
     function closeSettingsModal() {
@@ -450,7 +471,7 @@
         document.body.appendChild(el);
       }
       el.textContent = msg;
-      setTimeout(() => el && el.remove(), 2000);
+      setTimeout(() => el && el.remove(), 3000);
     }
     
     // 기존 API 연동 로직은 이제 사용하지 않음 (더미 데이터)
