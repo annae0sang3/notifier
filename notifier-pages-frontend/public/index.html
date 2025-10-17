@@ -347,7 +347,7 @@
       const end = `${year}-${String(month).padStart(2,'0')}-${String(getDaysInMonth(currentDate)).padStart(2,'0')}`;
 
       try {
-        const res = await fetch(`${WORKER_API_BASE}/api/schedule?start=${start}&end=${end}`);
+        const res = await fetch(`${WORKER_API_BASE}api/schedule?start=${start}&end=${end}`);
         if (!res.ok) throw new Error('서버 응답 오류');
         const data = await res.json();
         el.innerHTML = data.map(item => {
@@ -376,7 +376,7 @@
       const baseDate = document.getElementById('duty-base-date').value;
       const users = document.getElementById('duty-users').value.split(/\\s+/).filter(Boolean);
       try {
-        await fetch(`${WORKER_API_BASE}/api/settings`, {
+        await fetch(`${WORKER_API_BASE}api/settings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cycle, baseDate, users })
