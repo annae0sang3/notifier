@@ -364,9 +364,27 @@
       }
     }
 
-    function openSettingsModal() {
+    async function openSettingsModal() {
       document.getElementById('settings-modal').style.display = 'flex';
+      // 설정 값 로딩 로직 추가
+      try {
+        const res = await fetch(`${WORKER_API_BASE}api/settings`);
+        const settings = await res.json();
+        if (settings.cycle) {
+          document.getElementById('duty-cycle').value = settings.cycle;
+        }
+        if (settings.baseDate) {
+          document.getElementById('duty-base-date').value = settings.baseDate;
+        }
+        if (settings.users && Array.isArray(settings.users)) {
+          document.getElementById('duty-users').value = settings.users.join(' ');
+        }
+      } catch (e) {
+        console.error('Failed to load settings:', e);
+        showToast('Failed to load settings.');
+      }
     }
+
     function closeSettingsModal() {
       document.getElementById('settings-modal').style.display = 'none';
     }
@@ -374,13 +392,17 @@
     async function saveDutyCycle() {
       const cycle = document.getElementById('duty-cycle').value;
       const baseDate = document.getElementById('duty-base-date').value;
-      const users = document.getElementById('duty-users').value.split(/\\s+/).filter(Boolean);
+      const users = document.getElementById('duty-users').value.split(/\s+/).filter(Boolean);
       try {
-        await fetch(`${WORKER_API_BASE}api/settings`, {
+        const response = await fetch(`${WORKER_API_BASE}api/settings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cycle, baseDate, users })
         });
+        if (!response.ok) { // 응답이 성공(2xx)이 아닐 경우
+          const errorData = await response.json();
+          throw new Error(errorData.error || '알 수 없는 오류 발생');
+        }
         showToast('설정이 저장되었습니다.');
         closeSettingsModal();
         renderSchedule();
