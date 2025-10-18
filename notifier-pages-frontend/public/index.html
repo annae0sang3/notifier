@@ -354,7 +354,9 @@
           const d = new Date(item.date);
           return createDutyCard(d.getDate(), DAYS[d.getDay()], item.duty);
         }).join('');
-      } catch {
+      } catch (error) { // ⬅️ error 객체를 catch하도록 변경 
+        console.error('스케줄 데이터를 불러오는 중 오류 발생:', error);
+        showToast(error)
         const days = getDaysInMonth(currentDate);
         for (let i = 1; i <= days; i++) {
           const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
