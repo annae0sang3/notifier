@@ -348,21 +348,36 @@
 
       try {
         const res = await fetch(`${WORKER_API_BASE}api/schedule?start=${start}&end=${end}`);
-        if (!res.ok) throw new Error('서버 응답 오류');
+        // 1. HTTP 상태 코드 확인 (400, 500 등의 오류)
+        if (!res.ok) {
+          // 서버에서 오류를 보냈다면, JSON으로 파싱하여 오류 메시지를 추출 시도
+          const errorData = await res.json().catch(() => ({ error: '서버 응답 오류 (JSON 파싱 실패)' }));
+          throw new Error(errorData.error || '알 수 없는 서버 오류');
+        }
         const data = await res.json();
+
+        // 2. data가 배열인지 확인 (Type error 방지)
+        if (!Array.isArray(data)) {
+            // 서버가 배열이 아닌 다른 JSON 객체(예: {error: '...'})를 보낸 경우
+            throw new Error(data.error || '예상치 못한 데이터 형식');
+        }
+
+        // 3. 데이터 맵핑 및 렌더링 (원래 로직)
+        const el = document.getElementById('main-content'); // el 변수를 여기서 선언하지 않고 함수 스코프 내에서 사용
         el.innerHTML = data.map(item => {
           const d = new Date(item.date);
           return createDutyCard(d.getDate(), DAYS[d.getDay()], item.duty);
         }).join('');
       } catch (error) { // ⬅️ error 객체를 catch하도록 변경 
         console.error('스케줄 데이터를 불러오는 중 오류 발생:', error);
-        showToast(error)
+        showToast(error);
+        const el = document.getElementById('main-content'); // 여기서 el 선언 (혹은 함수 상단에서 선언)
         const days = getDaysInMonth(currentDate);
         for (let i = 1; i <= days; i++) {
           const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
           el.innerHTML += createDutyCard(i, DAYS[date.getDay()]);
         }
-        //showToast('스케줄 데이터를 불러올 수 없습니다.');
+        showToast(`스케줄 데이터를 불러올 수 없습니다. (${error.message || "네트워크 오류"})`); // 오류 메시지 포함
       }
     }
 
