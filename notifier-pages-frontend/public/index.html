@@ -406,8 +406,8 @@
         showToast('설정이 저장되었습니다.');
         closeSettingsModal();
         renderSchedule();
-      } catch {
-        showToast('설정을 저장할 수 없습니다.');
+      } catch (e) {
+        showToast('설정 저장 실패: ' + e.message);
       }
     }
 
