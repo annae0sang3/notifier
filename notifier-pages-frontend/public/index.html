@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- title On-Call Schedule /title -->
+  <title>On-Call Schedule</title>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     body {
@@ -74,6 +74,7 @@
       flex-direction: column;
       align-items: center;
       width: 60px;
+      position: relative; /* 아이콘 배치를 위한 기준점 */
     }
     .day-num {
       font-weight: 700;
@@ -90,9 +91,44 @@
       justify-content: space-between;
       align-items: center;
       border-left: 1px solid #eee;
-      padding-left: 10px;
+      padding-left: 15px; /*주간당직자 우측으로 약간 이동위해 패딩 증가*/
       color: #555;
       font-size: 0.9rem;
+    }
+
+    /* 오늘 날짜 카드 강조 */
+    .schedule-card.today {
+      border: 2px solid #137fec; /* 파란색 테두리로 강조 */
+      box-shadow: 0 2px 8px rgba(19, 127, 236, 0.2);
+    }
+
+    /* 근무 타입 아이콘 */
+    .duty-icon {
+        position: absolute;
+        top: 3px;
+        left: -12px; /* 날짜/요일 옆 왼쪽으로 이동 */
+        font-size: 1.1rem;
+        transition: color 0.2s;
+    }
+    .day-icon { color: #ffc107; /* 태양 아이콘 색상 (주간) */ }
+    .night-icon { color: #4a5482; /* 초승달 아이콘 색상 (야간) */ }
+    /* 혼합 근무 시 */
+    .mixed-icon { color: #f96d00; } 
+
+    /* 주말 색상 */
+    .day-name.weekend-sat { color: #137fec; /* 토요일 파란색 */ }
+    .day-name.weekend-sun { color: #dc3545; /* 일요일 빨간색 */ }
+
+    /* 당직자 열 정렬 */
+    .day-duty-col {
+      flex: 1; /* 공간 확보 */
+      text-align: left; /* 주간 당직자 왼쪽 정렬 유지 */
+      font-weight: 500;
+    }
+    .night-duty-col {
+      flex: 1; /* 공간 확보 */
+      text-align: center; /* 야간 당직자를 중앙쪽으로 이동 */
+      font-weight: 500;
     }
 
     .footer-nav {
@@ -270,7 +306,7 @@
         <span class="material-icons close-icon" onclick="closeSettingsModal()">close</span>
         <h2>설정</h2>
 
-        <label for="duty-cycle">근무 주기</label>
+        <label for="duty-cycle">근무 주기 (공백으로 구분)</label>
         <input id="duty-cycle" type="text" placeholder="예: 주 주 야 야 비 비">
 
         <label for="duty-base-date">기준일</label>
@@ -323,17 +359,48 @@
     }
 
     function createDutyCard(dayNum, dayName, duty = { day: [], night: [] }) {
+        // 근무 타입 아이콘 결정
+      let icon = '';
+      if (duty.day.length > 0 && duty.night.length === 0) {
+        icon = '<span class="material-icons duty-icon day-icon">wb_sunny</span>'; // 주간: 태양 ☀️
+      } else if (duty.night.length > 0 && duty.day.length === 0) {
+        icon = '<span class="material-icons duty-icon night-icon">nights_stay</span>'; // 야간: 초승달 🌙
+      } else if (duty.day.length > 0 && duty.night.length > 0) {
+        icon = '<span class="material-icons duty-icon mixed-icon">star_half</span>'; // 혼합: 반쪽 별
+      }
+
+      // 주말 색상 클래스 결정
+      let dayClass = '';
+      if (dayName === '토') {
+        dayClass = 'weekend-sat';
+      } else if (dayName === '일') {
+        dayClass = 'weekend-sun';
+      }
+
+      // 오늘 날짜 강조 클래스 결정
+      let todayClass = '';
+      const today = new Date();
+      // 연/월/일이 모두 일치하는지 확인
+      if (date.getDate() === today.getDate() && 
+          date.getMonth() === today.getMonth() && 
+          date.getFullYear() === today.getFullYear()) {
+          todayClass = 'today';
+      }
+      
       const dayDuty = duty.day.join(', ') || '-';
       const nightDuty = duty.night.join(', ') || '-';
+      
+      
       return `
-        <div class='schedule-card'>
+        <div class='schedule-card ${todayClass}'>
           <div class='card-date'>
+            ${icon} 
             <div class='day-num'>${String(dayNum).padStart(2,'0')}</div>
-            <div class='day-name'>${dayName}</div>
+            <div class='day-name ${dayClass}'>${dayName}</div>
           </div>
           <div class='card-duties'>
-            <div>${dayDuty}</div>
-            <div>${nightDuty}</div>
+            <div class="day-duty-col">${dayDuty}</div>
+            <div class="night-duty-col">${nightDuty}</div>
           </div>
         </div>`;
     }
@@ -367,7 +434,7 @@
         const el = document.getElementById('main-content'); // el 변수를 여기서 선언하지 않고 함수 스코프 내에서 사용
         el.innerHTML = data.map(item => {
           const d = new Date(item.date);
-          return createDutyCard(d.getDate(), DAYS[d.getDay()], item.duty);
+          return createDutyCard(d.getDate(), DAYS[d.getDay()], d, item.duty);
         }).join('');
       } catch (error) { // ⬅️ error 객체를 catch하도록 변경 
         console.error('스케줄 데이터를 불러오는 중 오류 발생:', error);
@@ -376,7 +443,7 @@
         const days = getDaysInMonth(currentDate);
         for (let i = 1; i <= days; i++) {
           const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
-          el.innerHTML += createDutyCard(i, DAYS[date.getDay()]);
+          el.innerHTML += createDutyCard(i, DAYS[date.getDay()], date);
         }
         showToast(`스케줄 데이터를 불러올 수 없습니다. (${error.message || "네트워크 오류"})`); // 오류 메시지 포함
       }
