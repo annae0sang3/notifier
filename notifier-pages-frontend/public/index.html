@@ -146,8 +146,51 @@
       animation: scaleUp 0.25s ease-out; position: relative; text-align: left;
       box-sizing: border-box;
     }
-    /* ... (Modal input, button styles 유지) ... */
+    /* ... (Modal input, button styles) ... */
+    #settings-modal input {
+      width: calc(100% - 4px); /* 💡 width 수정 (패딩 고려) */
+      box-sizing: border-box;
+      padding: 9px 10px;
+      font-size: 1rem;
+      border-radius: 8px; /* 메인 디자인과 통일성 */
+      border: 1px solid #ddd;
+      background-color: #f7f8fa; /* 배경색을 연하게 */
+      margin-top: 4px;
+      transition: all 0.2s;
+    }
+    #settings-modal input:focus {
+      border-color: #137fec; /* 포커스 시 강조 색상 */
+      background-color: #fff;
+      outline: none;
+    }
     
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end; /* 오른쪽으로 배치 */
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .button {
+      border: none;
+      border-radius: 8px; /* 모서리 통일 */
+      padding: 10px 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .button.save {
+      background-color: #137fec; /* 메인 강조 색상 */
+      color: #fff;
+    }
+    .button.cancel {
+      background-color: #6c757d; /* 회색 톤 */
+      color: #fff;
+    }
+    /* 호버 효과 (Mini App에서는 잘 사용되지 않지만, 웹뷰 표준을 위해 유지) */
+    .button.save:hover { background-color: #0f6ed4; }
+    .button.cancel:hover { background-color: #5c636a; }
+
     /* Footer Nav */
     .footer-nav {
       position: fixed;
