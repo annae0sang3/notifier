@@ -69,12 +69,19 @@
       align-items: center;
       justify-content: space-between;
     }
+    
+    /* 3. 오늘 날짜 카드 강조 */
+    .schedule-card.today {
+      border: 2px solid #137fec; /* 파란색 테두리로 강조 */
+      box-shadow: 0 2px 8px rgba(19, 127, 236, 0.2);
+    }
+    
     .card-date {
       display: flex;
       flex-direction: column;
       align-items: center;
       width: 60px;
-      position: relative; /* 아이콘 배치를 위한 기준점 */
+      position: relative; /* 1. 아이콘 배치를 위한 기준점 */
     }
     .day-num {
       font-weight: 700;
@@ -85,24 +92,12 @@
       font-size: 0.85rem;
       color: #6c757d;
     }
-    .card-duties {
-      flex-grow: 1;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-left: 1px solid #eee;
-      padding-left: 15px; /*주간당직자 우측으로 약간 이동위해 패딩 증가*/
-      color: #555;
-      font-size: 0.9rem;
-    }
 
-    /* 오늘 날짜 카드 강조 */
-    .schedule-card.today {
-      border: 2px solid #137fec; /* 파란색 테두리로 강조 */
-      box-shadow: 0 2px 8px rgba(19, 127, 236, 0.2);
-    }
+    /* 2. 주말 색상 */
+    .day-name.weekend-sat { color: #137fec; /* 토요일 파란색 */ }
+    .day-name.weekend-sun { color: #dc3545; /* 일요일 빨간색 */ }
 
-    /* 근무 타입 아이콘 */
+    /* 1. 근무 타입 아이콘 */
     .duty-icon {
         position: absolute;
         top: 3px;
@@ -112,52 +107,28 @@
     }
     .day-icon { color: #ffc107; /* 태양 아이콘 색상 (주간) */ }
     .night-icon { color: #4a5482; /* 초승달 아이콘 색상 (야간) */ }
-    /* 혼합 근무 시 */
-    .mixed-icon { color: #f96d00; } 
+    .mixed-icon { color: #f96d00; } /* 혼합 근무 */
 
-    /* 주말 색상 */
-    .day-name.weekend-sat { color: #137fec; /* 토요일 파란색 */ }
-    .day-name.weekend-sun { color: #dc3545; /* 일요일 빨간색 */ }
-
-    /* 당직자 열 정렬 */
+    /* 4. 주간당직자 오른쪽으로 띄우기 & 5. 야간당직자 중앙 정렬 */
+    .card-duties {
+      flex-grow: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 1px solid #eee;
+      padding-left: 15px; /* 주간당직자 오른쪽으로 띄우기 */
+      color: #555;
+      font-size: 0.9rem;
+    }
     .day-duty-col {
-      flex: 1; /* 공간 확보 */
-      text-align: left; /* 주간 당직자 왼쪽 정렬 유지 */
+      flex: 1;
+      text-align: left;
       font-weight: 500;
     }
     .night-duty-col {
-      flex: 1; /* 공간 확보 */
+      flex: 1;
       text-align: center; /* 야간 당직자를 중앙쪽으로 이동 */
       font-weight: 500;
-    }
-
-    .footer-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      max-width: 450px;
-      margin: 0 auto;
-      background-color: #ffffff;
-      border-top: 1px solid #e0e0e0;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      height: 60px;
-      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
-      z-index: 20;
-    }
-    .footer-nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-decoration: none;
-      color: #6c757d;
-      font-size: 0.75rem;
-      font-weight: 500;
-    }
-    .footer-nav-item.active {
-      color: #137fec;
     }
 
     /* ---------- Settings Modal ---------- */
@@ -290,7 +261,6 @@
 <body>
   <div class="container">
     <div class="header">
-      <!-- <h1>On-Call Schedule</h1> -->
       <div class="month-selector">
         <span class="arrow material-icons" onclick="prevMonth()">chevron_left</span>
         <h2 id="current-month-year">2025년 10월</h2>
@@ -300,7 +270,6 @@
 
     <div id="main-content" class="schedule-list"></div>
 
-    <!-- Settings Modal -->
     <div id="settings-modal">
       <div class="modal-content">
         <span class="material-icons close-icon" onclick="closeSettingsModal()">close</span>
@@ -358,8 +327,16 @@
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    function createDutyCard(dayNum, dayName, duty = { day: [], night: [] }) {
-        // 근무 타입 아이콘 결정
+    /**
+     * 날짜 카드 HTML을 생성하고 스타일 클래스를 적용합니다.
+     * @param {number} dayNum 날짜 숫자 (1-31)
+     * @param {string} dayName 요일 이름 ('일', '월', ...)
+     * @param {Date} date 현재 날짜 객체
+     * @param {{day: string[], night: string[]}} duty 당직자 정보
+     */
+    function createDutyCard(dayNum, dayName, date, duty = { day: [], night: [] }) {
+      
+      // 1. 근무 타입 아이콘 결정
       let icon = '';
       if (duty.day.length > 0 && duty.night.length === 0) {
         icon = '<span class="material-icons duty-icon day-icon">wb_sunny</span>'; // 주간: 태양 ☀️
@@ -369,7 +346,7 @@
         icon = '<span class="material-icons duty-icon mixed-icon">star_half</span>'; // 혼합: 반쪽 별
       }
 
-      // 주말 색상 클래스 결정
+      // 2. 주말 색상 클래스 결정
       let dayClass = '';
       if (dayName === '토') {
         dayClass = 'weekend-sat';
@@ -377,7 +354,7 @@
         dayClass = 'weekend-sun';
       }
 
-      // 오늘 날짜 강조 클래스 결정
+      // 3. 오늘 날짜 강조 클래스 결정
       let todayClass = '';
       const today = new Date();
       // 연/월/일이 모두 일치하는지 확인
@@ -389,7 +366,6 @@
       
       const dayDuty = duty.day.join(', ') || '-';
       const nightDuty = duty.night.join(', ') || '-';
-      
       
       return `
         <div class='schedule-card ${todayClass}'>
@@ -418,7 +394,6 @@
         const res = await fetch(`${WORKER_API_BASE}api/schedule?start=${start}&end=${end}`);
         // 1. HTTP 상태 코드 확인 (400, 500 등의 오류)
         if (!res.ok) {
-          // 서버에서 오류를 보냈다면, JSON으로 파싱하여 오류 메시지를 추출 시도
           const errorData = await res.json().catch(() => ({ error: '서버 응답 오류 (JSON 파싱 실패)' }));
           throw new Error(errorData.error || '알 수 없는 서버 오류');
         }
@@ -430,22 +405,22 @@
             throw new Error(data.error || '예상치 못한 데이터 형식');
         }
 
-        // 3. 데이터 맵핑 및 렌더링 (원래 로직)
-        const el = document.getElementById('main-content'); // el 변수를 여기서 선언하지 않고 함수 스코프 내에서 사용
+        // 3. 데이터 맵핑 및 렌더링
         el.innerHTML = data.map(item => {
-          const d = new Date(item.date);
+          // Worker가 보낸 YYYY-MM-DD 문자열을 UTC 기반 날짜로 변환
+          const d = new Date(item.date); 
           return createDutyCard(d.getDate(), DAYS[d.getDay()], d, item.duty);
         }).join('');
-      } catch (error) { // ⬅️ error 객체를 catch하도록 변경 
+      } catch (error) { 
         console.error('스케줄 데이터를 불러오는 중 오류 발생:', error);
-        showToast(error);
-        const el = document.getElementById('main-content'); // 여기서 el 선언 (혹은 함수 상단에서 선언)
+        
+        // 오류 발생 시에도 날짜 카드 형식만 보여주기 (토스트 알림과 함께)
         const days = getDaysInMonth(currentDate);
         for (let i = 1; i <= days; i++) {
           const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
-          el.innerHTML += createDutyCard(i, DAYS[date.getDay()], date);
+          el.innerHTML += createDutyCard(i, DAYS[date.getDay()], date); 
         }
-        showToast(`스케줄 데이터를 불러올 수 없습니다. (${error.message || "네트워크 오류"})`); // 오류 메시지 포함
+        showToast(`스케줄 데이터를 불러올 수 없습니다. (${error.message || "네트워크 오류"})`);
       }
     }
 
@@ -459,7 +434,8 @@
           document.getElementById('duty-cycle').value = settings.cycle;
         }
         if (settings.baseDate) {
-          document.getElementById('duty-base-date').value = settings.baseDate;
+          // HTML input type="date"에 맞게 YYYY-MM-DD 형식으로만 설정
+          document.getElementById('duty-base-date').value = settings.baseDate.substring(0, 10);
         }
         if (settings.users && Array.isArray(settings.users)) {
           document.getElementById('duty-users').value = settings.users.join(' ');
@@ -476,18 +452,26 @@
 
     async function saveDutyCycle() {
       const cycle = document.getElementById('duty-cycle').value;
-      const baseDate = document.getElementById('duty-base-date').value;
+      const baseDate = document.getElementById('duty-base-date').value; // YYYY-MM-DD
       const users = document.getElementById('duty-users').value.split(/\s+/).filter(Boolean);
+      
+      if (users.length === 0) {
+        showToast('근무자 명단이 필요합니다.');
+        return;
+      }
+      
       try {
         const response = await fetch(`${WORKER_API_BASE}api/settings`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cycle, baseDate, users })
         });
-        if (!response.ok) { // 응답이 성공(2xx)이 아닐 경우
-          const errorData = await response.json();
-          throw new Error(errorData.error || '알 수 없는 오류 발생');
+        
+        if (!response.ok) { 
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || response.statusText || '알 수 없는 오류');
         }
+        
         showToast('설정이 저장되었습니다.');
         closeSettingsModal();
         renderSchedule();
@@ -500,7 +484,16 @@
     function nextMonth() { currentDate.setMonth(currentDate.getMonth() + 1); renderSchedule(); }
     function showScheduleView() { renderSchedule(); }
 
-    document.addEventListener('DOMContentLoaded', renderSchedule);
+    document.addEventListener('DOMContentLoaded', () => {
+        // Telegram Mini App 초기화
+        if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+             Telegram.WebApp.ready();
+             // 텔레그램 메인 버튼 사용 (선택 사항)
+             // Telegram.WebApp.MainButton.setText('스케줄 업데이트');
+             // Telegram.WebApp.MainButton.show();
+        }
+        renderSchedule();
+    });
   </script>
 </body>
 </html>
