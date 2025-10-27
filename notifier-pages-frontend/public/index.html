@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>On-Call Schedule</title>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+  <!-- <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"> -->
   <style>
     body {
       font-family: 'Inter', 'SF Pro Display', sans-serif;
@@ -276,27 +276,27 @@
     <div id="settings-modal">
 
       <div class="modal-content">
-        <div class="icon-text-group header-group"> <!-- 아이콘과 H2를 감쌈 -->
+        <!-- <div class="icon-text-group header-group"> <
           <span class="material-icons-outlined">settings</span>
           <h2>설정</h2>
-        </div>
+        </div> -->
 
-        <span class="material-icons close-icon" onclick="closeSettingsModal()">close</span> <!-- 닫기 버튼은 따로 둠 -->
+        <!-- <span class="material-icons close-icon" onclick="closeSettingsModal()">close</span> 닫기 버튼은 따로 둠 -->
 
         <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
-          <span class="material-icons-outlined">wb_sunny</span>
+          <span class="material-icons">wb_sunny</span>
           <label for="duty-cycle">근무 주기 (공백으로 구분)</label>
         </div>
         <input id="duty-cycle" type="text" placeholder="예: 주 주 야 야 비 비">
 
         <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
-          <span class="material-icons-outlined">calendar_today</span>
+          <span class="material-icons">flag</span>
           <label for="duty-base-date">기준일</label>
         </div>
         <input id="duty-base-date" type="date">
 
         <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
-          <span class="material-icons-outlined">group</span>
+          <span class="material-icons">group</span>
           <label for="duty-users">근무자 명단 (공백으로 구분)</label>
         </div>
         <input id="duty-users" type="text" placeholder="예: 홍길동 김철수 이영희">
@@ -305,25 +305,11 @@
           <button class="button cancel" onclick="closeSettingsModal()">닫기</button>
           <button class="button save" onclick="saveDutyCycle()">저장</button>
         </div>
+
       </div>
 
-      <!-- <div class="modal-content">
-        <span class="material-icons close-icon" onclick="closeSettingsModal()">close</span>
-        <h2>설정</h2>
-        <span class="material-icons-outlined">wb_sunny</span><label for="duty-cycle">근무 주기 (공백으로 구분)</label>
-        <input id="duty-cycle" type="text" placeholder="예: 주 주 야 야 비 비">
-        <span class="material-icons-outlined">calendar_today</span><label for="duty-base-date">기준일</label>
-        <input id="duty-base-date" type="date">
-        <span class="material-icons-outlined">group</span><label for="duty-users">근무자 명단 (공백으로 구분)</label>
-        <input id="duty-users" type="text" placeholder="예: 홍길동 김철수 이영희">
-        <div class="modal-buttons">
-          <button class="button cancel" onclick="closeSettingsModal()">닫기</button>
-          <button class="button save" onclick="saveDutyCycle()">저장</button>
-        </div>
-      </div> -->
-
-
     </div>
+
   </div>
 
   <div id="toast"></div>
