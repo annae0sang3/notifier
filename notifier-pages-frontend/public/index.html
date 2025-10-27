@@ -232,6 +232,31 @@
       from { transform: scale(0.95); opacity: 0.8; }
       to { transform: scale(1); opacity: 1; }
     }
+    
+    /* ----------- Flexbox 기반 아이콘 및 텍스트 정렬 ----------- */
+
+    /* 아이콘과 텍스트를 감싸는 그룹을 Flex 컨테이너로 만듦 */
+    .icon-text-group {
+      display: flex;         /* 이 요소를 Flexbox 컨테이너로 설정 */
+      align-items: center;   /* 자식 요소들(아이콘, 텍스트)을 세로축(교차축) 중앙에 정렬 */
+      gap: 8px;              /* 자식 요소들 사이에 8px의 간격 */
+      margin-bottom: 5px;    /* 다음 입력 필드와의 간격 조정 (필요시) */
+      /* H2나 Label의 기본 margin이 있을 수 있으니 초기화 */
+    }
+
+    .icon-text-group h2,
+    .icon-text-group label {
+      margin: 0;             /* h2와 label의 기본 마진을 없애서 flexbox 정렬에 방해되지 않도록 함 */
+      line-height: 1.2;      /* 텍스트의 라인 높이 조절 (취향에 따라) */
+    }
+
+    /* 설정 제목 아이콘과 텍스트 그룹 (옵션) */
+    .icon-text-group.header-group {
+        /* 필요하면 설정 제목 부분에만 추가적인 스타일 적용 가능 */
+        margin-top: 10px; /* 상단 여백 추가 등 */
+    }
+
+
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -249,9 +274,42 @@
     <div id="main-content" class="schedule-list"></div>
 
     <div id="settings-modal">
+
       <div class="modal-content">
+        <div class="icon-text-group header-group"> <!-- 아이콘과 H2를 감쌈 -->
+          <span class="material-icons-outlined">settings</span>
+          <h2>설정</h2>
+        </div>
+
+        <span class="material-icons close-icon" onclick="closeSettingsModal()">close</span> <!-- 닫기 버튼은 따로 둠 -->
+
+        <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
+          <span class="material-icons-outlined">wb_sunny</span>
+          <label for="duty-cycle">근무 주기 (공백으로 구분)</label>
+        </div>
+        <input id="duty-cycle" type="text" placeholder="예: 주 주 야 야 비 비">
+
+        <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
+          <span class="material-icons-outlined">calendar_today</span>
+          <label for="duty-base-date">기준일</label>
+        </div>
+        <input id="duty-base-date" type="date">
+
+        <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
+          <span class="material-icons-outlined">group</span>
+          <label for="duty-users">근무자 명단 (공백으로 구분)</label>
+        </div>
+        <input id="duty-users" type="text" placeholder="예: 홍길동 김철수 이영희">
+
+        <div class="modal-buttons">
+          <button class="button cancel" onclick="closeSettingsModal()">닫기</button>
+          <button class="button save" onclick="saveDutyCycle()">저장</button>
+        </div>
+      </div>
+
+      <!-- <div class="modal-content">
         <span class="material-icons close-icon" onclick="closeSettingsModal()">close</span>
-        <span class="material-icons-outlined">settings</span><h2>설정</h2>
+        <h2>설정</h2>
         <span class="material-icons-outlined">wb_sunny</span><label for="duty-cycle">근무 주기 (공백으로 구분)</label>
         <input id="duty-cycle" type="text" placeholder="예: 주 주 야 야 비 비">
         <span class="material-icons-outlined">calendar_today</span><label for="duty-base-date">기준일</label>
@@ -262,7 +320,9 @@
           <button class="button cancel" onclick="closeSettingsModal()">닫기</button>
           <button class="button save" onclick="saveDutyCycle()">저장</button>
         </div>
-      </div>
+      </div> -->
+
+
     </div>
   </div>
 
