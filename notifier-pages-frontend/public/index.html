@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>On-Call Schedule</title>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"> -->
   <style>
-    /* (기존 스타일 유지) */
     body {
       font-family: 'Inter', 'SF Pro Display', sans-serif;
       margin: 0;
@@ -31,12 +31,34 @@
       background-color: #f6f7f8;
       z-index: 10;
     }
-    .header h1 { font-size: 1.2rem; font-weight: 700; color: #101922; margin: 0 0 15px; }
-    .month-selector { display: flex; align-items: center; justify-content: center; gap: 15px; }
-    .month-selector .arrow { font-size: 1.5rem; cursor: pointer; color: #6c757d; }
-    .month-selector h2 { font-size: 1.1rem; font-weight: 600; color: #101922; margin: 0; }
+    .header h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #101922;
+      margin: 0 0 15px;
+    }
+    .month-selector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+    .month-selector .arrow {
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #6c757d;
+    }
+    .month-selector h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #101922;
+      margin: 0;
+    }
 
-    .schedule-list { padding: 0 16px; margin-bottom: 20px; }
+    .schedule-list {
+      padding: 0 16px;
+      margin-bottom: 20px;
+    }
 
     .schedule-card {
       background-color: #ffffff;
@@ -48,24 +70,70 @@
       align-items: center;
       justify-content: space-between;
     }
+    
+    /* 오늘 날짜 카드 강조 */
     .schedule-card.today {
       border: 2px solid #137fec;
       box-shadow: 0 2px 8px rgba(19, 127, 236, 0.2);
     }
-    .card-date { display: flex; flex-direction: column; align-items: center; width: 60px; position: relative; }
-    .day-num { font-weight: 700; font-size: 1.1rem; color: #101922; }
-    .day-name { font-size: 0.95rem; color: #6c757d; }
+    
+    .card-date {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 60px;
+      position: relative;
+    }
+    .day-num {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #101922;
+    }
+    .day-name {
+      font-size: 0.95rem;
+      color: #6c757d;
+    }
+
+    /* 주말 색상 */
     .day-name.weekend-sat { color: #137fec; }
     .day-name.weekend-sun { color: #dc3545; }
-    .duty-icon { position: absolute; top: 50%; transform: translateY(-50%); left: -2px; font-size: 1.1rem; transition: color 0.2s; }
+
+    /* 근무 타입 아이콘 위치 조정 (수직 중앙 정렬) */
+    .duty-icon {
+        position: absolute;
+        top: 50%; /* 상단 50% 위치 */
+        transform: translateY(-50%); /* 아이콘 높이의 50%만큼 위로 이동 */
+        left: -2px; /* 좌측에서 조금 우측으로 이동 */
+        font-size: 1.1rem;
+        transition: color 0.2s;
+    }
     .day-icon { color: #ffc107; }
     .night-icon { color: #4a5482; }
     .mixed-icon { color: #f96d00; }
 
-    .card-duties { flex-grow: 1; display: flex; justify-content: space-between; align-items: center; border-left: 1px solid #eee; padding-left: 20px; color: #555; font-size: 1.0rem; }
-    .day-duty-col { flex: 1; text-align: center; font-weight: 500; }
-    .night-duty-col { flex: 1; text-align: center; font-weight: 500; }
+    /* 당직자 열 정렬 */
+    .card-duties {
+      flex-grow: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 1px solid #eee;
+      padding-left: 20px; /* 주간당직자를 오른쪽으로 띄우기 */
+      color: #555;
+      font-size: 1.0rem;
+    }
+    .day-duty-col {
+      flex: 1;
+      text-align: center; /* 주간 당직자 중앙 정렬 유지 */
+      font-weight: 500;
+    }
+    .night-duty-col {
+      flex: 1;
+      text-align: center; /* 야간 당직자를 중앙쪽으로 이동 */
+      font-weight: 500;
+    }
 
+    /* ---------- Settings Modal / Toast / Footer ---------- */
     #settings-modal {
       display: none; position: fixed; top: 0; left: 0;
       width: 100vw; height: 100vh;
@@ -79,43 +147,117 @@
       animation: scaleUp 0.25s ease-out; position: relative; text-align: left;
       box-sizing: border-box;
     }
+    /* ... (Modal input, button styles) ... */
     #settings-modal input {
-      width: calc(100% - 4px);
+      width: calc(100% - 4px); /* 💡 width 수정 (패딩 고려) */
       box-sizing: border-box;
       padding: 9px 10px;
       font-size: 1rem;
-      border-radius: 8px;
+      border-radius: 8px; /* 메인 디자인과 통일성 */
       border: 1px solid #ddd;
-      background-color: #f7f8fa;
+      background-color: #f7f8fa; /* 배경색을 연하게 */
       margin-top: 20px;
       margin-bottom: 30px;
       transition: all 0.2s;
     }
-    #settings-modal input:focus { border-color: #137fec; background-color: #fff; outline: none; }
-    .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
-    .button { border: none; border-radius: 8px; padding: 10px 16px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s; }
-    .button.save { background-color: #137fec; color: #fff; }
-    .button.cancel { background-color: #6c757d; color: #fff; }
+    #settings-modal input:focus {
+      border-color: #137fec; /* 포커스 시 강조 색상 */
+      background-color: #fff;
+      outline: none;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end; /* 오른쪽으로 배치 */
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .button {
+      border: none;
+      border-radius: 8px; /* 모서리 통일 */
+      padding: 10px 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .button.save {
+      background-color: #137fec; /* 메인 강조 색상 */
+      color: #fff;
+    }
+    .button.cancel {
+      background-color: #6c757d; /* 회색 톤 */
+      color: #fff;
+    }
+    /* 호버 효과 (Mini App에서는 잘 사용되지 않지만, 웹뷰 표준을 위해 유지) */
     .button.save:hover { background-color: #0f6ed4; }
     .button.cancel:hover { background-color: #5c636a; }
 
+    /* Footer Nav */
     .footer-nav {
-      position: fixed; bottom: 0; width: 100%; max-width: 450px; left: 50%; transform: translateX(-50%);
-      display: flex; justify-content: space-around; background-color: #fff; border-top: 1px solid #eee; box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      max-width: 450px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      justify-content: space-around;
+      background-color: #fff;
+      border-top: 1px solid #eee;
+      box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
       z-index: 50;
     }
-    .footer-nav-item { display: flex; flex-direction: column; align-items: center; padding: 8px 0; text-decoration: none; color: #6c757d; font-size: 0.7rem; flex: 1; }
-    .footer-nav-item.active, .footer-nav-item:hover { color: #137fec; }
-    .footer-nav-item span.material-icons { font-size: 1.4rem; }
+    .footer-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 0;
+      text-decoration: none;
+      color: #6c757d;
+      font-size: 0.7rem;
+      flex: 1;
+    }
+    .footer-nav-item.active, .footer-nav-item:hover {
+      color: #137fec;
+    }
+    .footer-nav-item span.material-icons {
+      font-size: 1.4rem;
+    }
 
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes scaleUp { from { transform: scale(0.95); opacity: 0.8; } to { transform: scale(1); opacity: 1; } }
+    @keyframes fadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+    @keyframes scaleUp {
+      from { transform: scale(0.95); opacity: 0.8; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    
+    /* ----------- Flexbox 기반 아이콘 및 텍스트 정렬 ----------- */
 
-    .icon-text-group { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
-    .icon-text-group h2, .icon-text-group label { margin:0; line-height:1.2; }
+    /* 아이콘과 텍스트를 감싸는 그룹을 Flex 컨테이너로 만듦 */
+    .icon-text-group {
+      display: flex;         /* 이 요소를 Flexbox 컨테이너로 설정 */
+      align-items: center;   /* 자식 요소들(아이콘, 텍스트)을 세로축(교차축) 중앙에 정렬 */
+      gap: 8px;              /* 자식 요소들 사이에 8px의 간격 */
+      margin-bottom: 5px;    /* 다음 입력 필드와의 간격 조정 (필요시) */
+      /* H2나 Label의 기본 margin이 있을 수 있으니 초기화 */
+    }
+
+    .icon-text-group h2,
+    .icon-text-group label {
+      margin: 0;             /* h2와 label의 기본 마진을 없애서 flexbox 정렬에 방해되지 않도록 함 */
+      line-height: 1.2;      /* 텍스트의 라인 높이 조절 (취향에 따라) */
+    }
+
+    /* 설정 제목 아이콘과 텍스트 그룹 (옵션) */
+    .icon-text-group.header-group {
+        /* 필요하면 설정 제목 부분에만 추가적인 스타일 적용 가능 */
+        margin-top: 10px; /* 상단 여백 추가 등 */
+    }
+
+
   </style>
-
-  <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
@@ -132,20 +274,28 @@
     <div id="main-content" class="schedule-list"></div>
 
     <div id="settings-modal">
+
       <div class="modal-content">
-        <div class="icon-text-group">
+        <!-- <div class="icon-text-group header-group"> <
+          <span class="material-icons-outlined">settings</span>
+          <h2>설정</h2>
+        </div> -->
+
+        <!-- <span class="material-icons close-icon" onclick="closeSettingsModal()">close</span> 닫기 버튼은 따로 둠 -->
+
+        <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
           <span class="material-icons">wb_sunny</span>
           <label for="duty-cycle">근무 주기 (공백으로 구분)</label>
         </div>
         <input id="duty-cycle" type="text" placeholder="예: 주 주 야 야 비 비">
 
-        <div class="icon-text-group">
+        <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
           <span class="material-icons">flag</span>
           <label for="duty-base-date">기준일 (첫 번째 주간 근무일)</label>
         </div>
         <input id="duty-base-date" type="date">
 
-        <div class="icon-text-group">
+        <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
           <span class="material-icons">group</span>
           <label for="duty-users">근무자 명단 (공백으로 구분)</label>
         </div>
@@ -155,12 +305,14 @@
           <button class="button cancel" onclick="closeSettingsModal()">닫기</button>
           <button class="button save" onclick="saveDutyCycle()">저장</button>
         </div>
+
       </div>
+
     </div>
 
   </div>
 
-  <div id="toast" style="position:fixed; left:50%; transform:translateX(-50%); bottom:80px; background:#222; color:#fff; padding:8px 12px; border-radius:8px; display:none;"></div>
+  <div id="toast"></div>
 
   <footer class="footer-nav">
     <a class="footer-nav-item" href="#" onclick="goToToday(); return false;">
@@ -174,30 +326,7 @@
   </footer>
 
   <script>
-    /**************************************************************************
-     * 원본 하드코딩된 백엔드 URL (주석으로 보관)
-     *
-     * 원본 코드 예시 (보관용 주석):
-     * const WORKER_API_BASE = 'https://notifier-worker-backend.annae0sang3.workers.dev/';
-     *
-     * 주의: 클라이언트에 직접 하드코딩하면 배포된 JS/HTML에서 URL이 노출됩니다.
-     **************************************************************************/
-    /*
-    // 원본 보관용
     const WORKER_API_BASE = 'https://notifier-worker-backend.annae0sang3.workers.dev/';
-    */
-
-    /**************************************************************************
-     * 변경(옵션 A 적용) — 클라이언트에서 직접 백엔드 URL 사용
-     * - 요청대로 "옵션 A: 그대로 둔다"를 실제로 반영하였음.
-     * - 원본 주석은 보관되어 있으며, 아래에 실제 사용되는 상수를 추가함.
-     **************************************************************************/
-    // 실제 운영용 하드코딩(옵션 A)
-    const WORKER_API_BASE = 'https://notifier-worker-backend.annae0sang3.workers.dev/';
-
-    /*****************************
-     * 기존 UI / 유틸 함수들 (원본 기능 유지)
-     *****************************/
     const DAYS = ['일','월','화','수','목','금','토'];
     let currentDate = new Date();
 
@@ -214,39 +343,49 @@
     function showToast(message) {
       const toast = document.getElementById('toast');
       toast.textContent = message;
-      toast.style.display = 'block';
-      setTimeout(() => { toast.style.display = 'none'; }, 3000);
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
+    /**
+     * 날짜 카드 HTML을 생성하고 스타일 클래스를 적용합니다.
+     */
     function createDutyCard(dayNum, dayName, date, duty = { day: [], night: [] }) {
+      
+      // 1. 근무 타입 아이콘 결정
       let icon = '';
       if (duty.day.length > 0 && duty.night.length === 0) {
-        icon = '<span class="material-icons duty-icon day-icon">wb_sunny</span>';
+        icon = '<span class="material-icons duty-icon day-icon">wb_sunny</span>'; // 주간: 태양 ☀️
       } else if (duty.night.length > 0 && duty.day.length === 0) {
-        icon = '<span class="material-icons duty-icon night-icon">nights_stay</span>';
+        icon = '<span class="material-icons duty-icon night-icon">nights_stay</span>'; // 야간: 초승달 🌙
       } else if (duty.day.length > 0 && duty.night.length > 0) {
-        icon = '<span class="material-icons duty-icon mixed-icon">star_half</span>';
+        icon = '<span class="material-icons duty-icon mixed-icon">star_half</span>'; // 혼합: 반쪽 별
       }
 
+      // 2. 주말 색상 클래스 결정
       let dayClass = '';
-      if (dayName === '토') dayClass = 'weekend-sat';
-      else if (dayName === '일') dayClass = 'weekend-sun';
+      if (dayName === '토') {
+        dayClass = 'weekend-sat';
+      } else if (dayName === '일') {
+        dayClass = 'weekend-sun';
+      }
 
+      // 3. 오늘 날짜 강조 클래스 결정
       let todayClass = '';
       const today = new Date();
-      if (date.getDate() === today.getDate() &&
-          date.getMonth() === today.getMonth() &&
+      if (date.getDate() === today.getDate() && 
+          date.getMonth() === today.getMonth() && 
           date.getFullYear() === today.getFullYear()) {
-        todayClass = 'today';
+          todayClass = 'today';
       }
-
+      
       const dayDuty = duty.day.join(', ') || '-';
       const nightDuty = duty.night.join(', ') || '-';
-
+      
       return `
         <div class='schedule-card ${todayClass}'>
           <div class='card-date'>
-            ${icon}
+            ${icon} 
             <div class='day-num'>${String(dayNum).padStart(2,'0')}</div>
             <div class='day-name ${dayClass}'>${dayName}</div>
           </div>
@@ -257,185 +396,154 @@
         </div>`;
     }
 
+    /**
+     * 오늘 날짜를 가진 카드(.schedule-card.today)로 스크롤하는 함수
+     */
     function scrollToTodayCard() {
       const todayCard = document.querySelector('.schedule-card.today');
-      const header = document.querySelector('.header');
-      if (!todayCard) return;
-      const offsetTop = todayCard.getBoundingClientRect().top + window.scrollY - (header ? header.offsetHeight : 0);
-      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-    }
+      const header = document.querySelector('.header'); // 헤더 요소 선택
 
-    /**************************************************************************
-     * 원본 saveDutyCycle 함수 (주석으로 보관) — 참고용
-     * - 원본은 WORKER_API_BASE를 사용해 직접 백엔드 호출하는 형태였음.
-     **************************************************************************/
-    /*
-    async function saveDutyCycle() {
-      const cycle = document.getElementById('duty-cycle').value;
-      const baseDate = document.getElementById('duty-base-date').value;
-      const users = document.getElementById('duty-users').value.split(/\s+/).filter(Boolean);
-
-      if (users.length === 0) {
-        showToast('근무자 명단이 필요합니다.');
-        return;
-      }
-
-      try {
-        const response = await fetch(`${WORKER_API_BASE}api/settings`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cycle, baseDate, users })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || response.statusText || '알 수 없는 오류');
-        }
-
-        showToast('설정이 저장되었습니다.');
-        closeSettingsModal();
-        renderSchedule();
-      } catch (e) {
-        showToast('설정 저장 실패: ' + e.message);
-      }
-    }
-    */
-
-    /**************************************************************************
-     * 현재 적용된 saveDutyCycle 함수 (옵션 A: 직접 백엔드 URL 사용)
-     * - fetch가 WORKER_API_BASE + 'api/settings' 로 호출되도록 복원/구현함.
-     **************************************************************************/
-    async function saveDutyCycle() {
-      const cycle = document.getElementById('duty-cycle').value;
-      const baseDate = document.getElementById('duty-base-date').value;
-      const users = document.getElementById('duty-users').value.split(/\s+/).filter(Boolean);
-
-      if (users.length === 0) {
-        showToast('근무자 명단이 필요합니다.');
-        return;
-      }
-
-      try {
-        const response = await fetch(`${WORKER_API_BASE}api/settings`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          // credentials 옵션은 세션/쿠키를 사용할 때만 켜라
-          // credentials: 'include',
-          body: JSON.stringify({ cycle, baseDate, users })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || response.statusText || '알 수 없는 오류');
-        }
-
-        showToast('설정이 저장되었습니다.');
-        closeSettingsModal();
-        renderSchedule();
-      } catch (e) {
-        showToast('설정 저장 실패: ' + e.message);
+      if (todayCard && header) {
+          // 헤더 높이만큼의 오프셋을 계산합니다.
+          // header.offsetHeight는 헤더의 실제 높이를 반환합니다.
+          const headerHeight = header.offsetHeight; 
+          
+          // 스크롤할 최종 위치: 카드 위치 - 헤더 높이 - 여유 공간(10px)
+          const targetScrollY = todayCard.offsetTop - headerHeight - 10;
+          
+          // window.scrollTo를 사용하여 부드럽게 스크롤합니다.
+          window.scrollTo({
+              top: targetScrollY,
+              behavior: 'smooth'
+          });
+      } else if (todayCard) {
+          // 헤더를 찾지 못할 경우 기본 스크롤 (예비용)
+          todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
 
-    /**************************************************************************
-     * Telegram WebApp 초기화 및 이벤트 바인딩 (유지)
-     * - tg.ready(), themeChanged, viewportChanged, MainButton 사용 포함
-     * - tg.initData 사용 시 서버 검증 권장 (주석 포함)
-     **************************************************************************/
-    (function initTelegramIntegration() {
-      const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-      if (!tg) {
-        console.warn('Telegram WebApp 객체를 찾을 수 없습니다. Telegram 내에서 테스트하세요.');
-        return;
-      }
-
-      tg.ready();
-      window.TG = tg;
-
-      // SECURITY NOTE: tg.initData (signed) 는 서버에서 검증 후 사용하세요.
-      // 서버 검증: 클라이언트에서 initData를 서버로 보내고, 서버가 Telegram 문서 방식으로 시그니처 확인 → 세션 발급
-
-      function applyTheme() {
-        const scheme = tg.colorScheme || 'light';
-        document.documentElement.setAttribute('data-theme', scheme);
-      }
-      applyTheme();
-      tg.onEvent('themeChanged', applyTheme);
-
-      function adjustForViewport() {
-        try {
-          const viewportH = tg.viewportHeight;
-          const container = document.querySelector('.container');
-          if (container) container.style.height = viewportH + 'px';
-        } catch (e) {
-          console.warn('viewport 조정 실패', e);
-        }
-      }
-      adjustForViewport();
-      tg.onEvent('viewportChanged', adjustForViewport);
+    /**
+     * 스케줄을 렌더링하고, 필요 시 오늘 날짜로 스크롤합니다.
+     * @param {boolean} [scrollToToday=false] 렌더링 후 오늘 날짜로 스크롤할지 여부
+     */
+    async function renderSchedule(scrollToToday = false) { 
+      updateMonthHeader();
+      const el = document.getElementById('main-content');
+      el.innerHTML = '';
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      const start = `${year}-${String(month).padStart(2,'0')}-01`;
+      const end = `${year}-${String(month).padStart(2,'0')}-${String(getDaysInMonth(currentDate)).padStart(2,'0')}`;
 
       try {
-        tg.MainButton.hide();
-        window.onTelegramMainButtonClick = async function () {
-          if (typeof saveDutyCycle === 'function') await saveDutyCycle();
-        };
-        tg.MainButton.onClick(window.onTelegramMainButtonClick);
-      } catch (e) {
-        console.warn('MainButton 초기화 실패:', e);
-      }
-    })();
+        const res = await fetch(`${WORKER_API_BASE}api/schedule?start=${start}&end=${end}`);
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: '서버 응답 오류 (JSON 파싱 실패)' }));
+          throw new Error(errorData.error || '알 수 없는 서버 오류');
+        }
+        const data = await res.json();
 
-    /**************************************************************************
-     * 모달 열기/닫기: Telegram 내에서는 MainButton을 전송 버튼으로 활용
-     **************************************************************************/
-    function openSettingsModal() {
+        if (!Array.isArray(data)) {
+            throw new Error(data.error || '예상치 못한 데이터 형식');
+        }
+
+        // 렌더링
+        el.innerHTML = data.map(item => {
+          const d = new Date(item.date); 
+          return createDutyCard(d.getDate(), DAYS[d.getDay()], d, item.duty);
+        }).join('');
+        
+        // 스크롤 로직 실행
+        if (scrollToToday) {
+            scrollToTodayCard();
+        }
+
+      } catch (error) { 
+        console.error('스케줄 데이터를 불러오는 중 오류 발생:', error);
+        
+        // 오류 발생 시에도 날짜 카드 형식만 보여주기
+        const days = getDaysInMonth(currentDate);
+        for (let i = 1; i <= days; i++) {
+          const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
+          el.innerHTML += createDutyCard(i, DAYS[date.getDay()], date); 
+        }
+        showToast(`스케줄 데이터를 불러올 수 없습니다. (${error.message || "네트워크 오류"})`);
+      }
+    }
+
+    // '오늘' 버튼 클릭 시 실행 함수
+    function goToToday() {
+        currentDate = new Date(); 
+        renderSchedule(true); // 스크롤 플래그를 true로 전달
+    }
+
+    async function openSettingsModal() {
       document.getElementById('settings-modal').style.display = 'flex';
-      if (window.TG && window.TG.MainButton) {
-        window.TG.MainButton.setText('저장');
-        window.TG.MainButton.show();
+      // 설정 값 로딩 로직
+      try {
+        const res = await fetch(`${WORKER_API_BASE}api/settings`);
+        const settings = await res.json();
+        if (settings.cycle) {
+          document.getElementById('duty-cycle').value = settings.cycle;
+        }
+        if (settings.baseDate) {
+          document.getElementById('duty-base-date').value = settings.baseDate.substring(0, 10);
+        }
+        if (settings.users && Array.isArray(settings.users)) {
+          document.getElementById('duty-users').value = settings.users.join(' ');
+        }
+      } catch (e) {
+        console.error('Failed to load settings:', e);
+        showToast('Failed to load settings.');
       }
     }
+
     function closeSettingsModal() {
       document.getElementById('settings-modal').style.display = 'none';
-      if (window.TG && window.TG.MainButton) window.TG.MainButton.hide();
     }
 
-    /**************************************************************************
-     * renderSchedule 등 UI 로직(원본 기능 유지)
-     * - 네 원본 코드에서 실제 스케줄 생성 로직을 그대로 보존하려면
-     *   원본 스크립트의 세부 함수들을 보내줘. 내가 정확히 병합해줄게.
-     **************************************************************************/
-    function renderSchedule(scrollToTodayFlag = true) {
-      updateMonthHeader();
-      const main = document.getElementById('main-content');
-      main.innerHTML = ''; // 기본 클리어
-      const daysInMonth = getDaysInMonth(currentDate);
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth();
-      for (let d = 1; d <= daysInMonth; d++) {
-        const date = new Date(year, month, d);
-        const dayName = DAYS[date.getDay()];
-        // 기본 더미 duty (원본에 따른 실제 데이터 로직으로 변경 가능)
-        const duty = { day: [], night: [] };
-        // 렌더 카드 추가
-        main.insertAdjacentHTML('beforeend', createDutyCard(d, dayName, date, duty));
+    async function saveDutyCycle() {
+      const cycle = document.getElementById('duty-cycle').value;
+      const baseDate = document.getElementById('duty-base-date').value; 
+      const users = document.getElementById('duty-users').value.split(/\s+/).filter(Boolean);
+      
+      if (users.length === 0) {
+        showToast('근무자 명단이 필요합니다.');
+        return;
       }
-      if (scrollToTodayFlag) setTimeout(scrollToTodayCard, 250);
+      
+      try {
+        const response = await fetch(`${WORKER_API_BASE}api/settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cycle, baseDate, users })
+        });
+        
+        if (!response.ok) { 
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || response.statusText || '알 수 없는 오류');
+        }
+        
+        showToast('설정이 저장되었습니다.');
+        closeSettingsModal();
+        renderSchedule();
+      } catch (e) {
+        showToast('설정 저장 실패: ' + e.message);
+      }
     }
 
     function prevMonth() { currentDate.setMonth(currentDate.getMonth() - 1); renderSchedule(false); }
     function nextMonth() { currentDate.setMonth(currentDate.getMonth() + 1); renderSchedule(false); }
 
-    function goToToday() {
-      currentDate = new Date();
-      renderSchedule(true);
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
-      // 텔레그램 내 테스트 시 tg 객체 동작은 initTelegramIntegration에서 처리됨
-      goToToday();
+        // Telegram Mini App 초기화
+        if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+             Telegram.WebApp.ready();
+        }
+        // 초기 로드 시에는 스크롤 없이 시작
+        // renderSchedule(false);
+        goToToday(); // currentDate를 오늘로 설정하고 renderSchedule(true) 호출
     });
-
   </script>
 </body>
 </html>
