@@ -272,6 +272,11 @@
       </div>
     </div>
 
+
+    <div id="telegram-info" style="padding: 16px; background: #eef; border-radius: 8px; margin: 16px;">
+      Telegram WebApp 정보 로딩 중...
+    </div>
+    
     <!-- ❗ 인증 실패 시 메시지 표시 -->
     <div id="access-denied" style="display:none; margin-top: 50px; color: #dc3545; font-weight:600;">
       이 미니앱은 특정 텔레그램 단체방 멤버만 접근할 수 있습니다.
@@ -577,6 +582,33 @@
       if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
         Telegram.WebApp.ready();
       }
+
+
+
+
+      
+
+      
+    const infoDiv = document.getElementById('telegram-info');
+
+    if (tg.initDataUnsafe) {
+        const user = tg.initDataUnsafe.user || {};
+        const chat = tg.initDataUnsafe.chat || {};
+
+        infoDiv.innerHTML = `
+            <p><strong>사용자 이름:</strong> ${user.first_name || '-'} (${user.id || '-'})</p>
+            <p><strong>채팅 이름:</strong> ${chat.title || '-'} (${chat.id || '-'})</p>
+        `;
+    } else {
+        infoDiv.textContent = 'Telegram initData가 없습니다.';
+    }
+      
+
+
+
+
+
+      
 
       // ✅ 1️⃣ 먼저 사용자 검증
       const verified = await verifyTelegramUser();
