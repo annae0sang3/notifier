@@ -261,6 +261,7 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
+
 <body>
   <div class="container">
     <div class="header">
@@ -269,6 +270,11 @@
         <h2 id="current-month-year">2025년 10월</h2>
         <span class="arrow material-icons" onclick="nextMonth()">chevron_right</span>
       </div>
+    </div>
+
+    <!-- ❗ 인증 실패 시 메시지 표시 -->
+    <div id="access-denied" style="display:none; margin-top: 50px; color: #dc3545; font-weight:600;">
+      이 미니앱은 특정 텔레그램 단체방 멤버만 접근할 수 있습니다.
     </div>
 
     <div id="main-content" class="schedule-list"></div>
@@ -535,14 +541,56 @@
     function prevMonth() { currentDate.setMonth(currentDate.getMonth() - 1); renderSchedule(false); }
     function nextMonth() { currentDate.setMonth(currentDate.getMonth() + 1); renderSchedule(false); }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        // Telegram Mini App 초기화
-        if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-             Telegram.WebApp.ready();
+    async function verifyTelegramUser() {
+      try {
+        // Telegram 미니앱 SDK에서 initData 가져오기
+        const initData = Telegram.WebApp.initData || '';
+        if (!initData) {
+          console.warn('initData가 비어 있음: Telegram Mini App 내에서 실행되어야 합니다.');
+          return false;
         }
-        // 초기 로드 시에는 스크롤 없이 시작
-        // renderSchedule(false);
-        goToToday(); // currentDate를 오늘로 설정하고 renderSchedule(true) 호출
+
+        // 백엔드 Worker로 검증 요청
+        const response = await fetch(`${WORKER_API_BASE}verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData }),
+        });
+
+        const result = await response.json();
+        if (!result.ok) {
+          console.warn('검증 실패:', result.reason || result);
+          return false;
+        }
+
+        console.log('✅ 사용자 검증 성공:', result.user);
+        return true;
+
+      } catch (err) {
+        console.error('검증 오류:', err);
+        return false;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+        Telegram.WebApp.ready();
+      }
+
+      // ✅ 1️⃣ 먼저 사용자 검증
+      const verified = await verifyTelegramUser();
+
+      if (!verified) {
+        // 접근 차단 처리
+        document.querySelector('.header').style.display = 'none';
+        document.getElementById('main-content').style.display = 'none';
+        document.querySelector('.footer-nav').style.display = 'none';
+        document.getElementById('access-denied').style.display = 'block';
+        return;
+      }
+
+      // ✅ 2️⃣ 통과 시 정상 동작
+      goToToday(); // currentDate를 오늘로 설정하고 renderSchedule(true) 호출
     });
   </script>
 </body>
