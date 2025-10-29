@@ -545,6 +545,7 @@
       try {
         // Telegram 미니앱 SDK에서 initData 가져오기
         const initData = Telegram.WebApp.initData || '';
+        console.log(initData);
         if (!initData) {
           console.warn('initData가 비어 있음: Telegram Mini App 내에서 실행되어야 합니다.');
           return false;
