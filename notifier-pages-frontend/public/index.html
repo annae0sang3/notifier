@@ -614,26 +614,6 @@
         return; // 미니앱 환경이 아니면 더 이상 진행하지 않음
       }
 
-
-
-
-      
-
-    const tg = window.Telegram.WebApp;  
-    const infoDiv = document.getElementById('telegram-info');
-
-    if (tg.initDataUnsafe) {
-        const user = tg.initDataUnsafe.user || {};
-        const chat = tg.initDataUnsafe.chat || {};
-
-        infoDiv.innerHTML = `
-            <p><strong>사용자 이름:</strong> ${user.first_name || '-'} (${user.id || '-'})</p>
-            <p><strong>채팅 이름:</strong> ${chat.title || '-'} (${chat.id || '-'})</p>
-        `;
-    } else {
-        infoDiv.textContent = 'Telegram initData가 없습니다.';
-    }
-
     // --- 사용자 검증 ---
     // ✅ 1️⃣ 먼저 사용자 검증
     const verificationResult = await verifyTelegramUser(); // 변경된 반환값 사용
