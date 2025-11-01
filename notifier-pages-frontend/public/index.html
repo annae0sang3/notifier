@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -625,6 +626,21 @@
       // ✅ 2️⃣ 통과 시 정상 동작
       goToToday(); // currentDate를 오늘로 설정하고 renderSchedule(true) 호출
     });
+
+
+    
+      if (window.Telegram && window.Telegram.WebApp) {
+        console.log('✅ 텔레그램 미니앱 환경입니다!');
+        console.log('initData:', window.Telegram.WebApp.initData);
+        window.Telegram.WebApp.ready();
+        // ... 미니앱 초기화 및 UI 관련 코드
+      } else {
+        console.log('❌ 텔레그램 미니앱 환경이 아닙니다. 일반 웹페이지로 열렸습니다.');
+        document.getElementById('app-root').textContent = '이 앱은 텔레그램 미니앱 환경에서만 동작합니다.';
+      }
+
+
+    
   </script>
 </body>
 </html>
