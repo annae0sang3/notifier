@@ -635,6 +635,7 @@
     infoDiv.innerHTML = `
         <p><strong>사용자 이름:</strong> ${user.first_name || 'N/A'} (ID: ${user.id || 'N/A'})</p>
         <p><strong>채팅 이름:</strong> ${chat.title || 'N/A'} (ID: ${chat.id || 'N/A'})</p>
+        <p style="color: #28a745; font-weight: 600;">✓ 인증 완료</p>
     `;
 
     goToToday(); // currentDate를 오늘로 설정하고 renderSchedule(true) 호출
