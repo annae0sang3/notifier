@@ -550,19 +550,41 @@
     async function verifyTelegramUser() {
       try {
         // Telegram 미니앱 SDK에서 initData 가져오기
-        const initData = window.Telegram.WebApp.initData || '';
+
+// 아래 임시 테스트 ----------------------------------------------------
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+
+        const initData = tg.initData; // 서명 검증용 원본 문자열
+        const chatIdFromStart = tg.initDataUnsafe?.start_param; // startapp payload (-100... 형태)
+
         console.log(initData);
         if (!initData) {
           console.warn('initData가 비어 있음: Telegram Mini App 내에서 실행되어야 합니다.');
           return false;
         }
-
-        // 백엔드 Worker로 검증 요청
+        
         const response = await fetch(`${WORKER_API_BASE}verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData }),
+          body: JSON.stringify({ initData, chat_id: chatIdFromStart })
         });
+// 여기까지 임시 테스트 ----------------------------------------------
+// 테스트 후 아래 주석 복구 여부 검토
+        
+        // const initData = window.Telegram.WebApp.initData || '';
+        // console.log(initData);
+        // if (!initData) {
+        //   console.warn('initData가 비어 있음: Telegram Mini App 내에서 실행되어야 합니다.');
+        //   return false;
+        // }
+
+        // // 백엔드 Worker로 검증 요청
+        // const response = await fetch(`${WORKER_API_BASE}verify`, {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ initData }),
+        // });
 
         const result = await response.json();
         if (!result.ok) {
