@@ -412,6 +412,9 @@
           const chatId = urlParams.get('chat_id');
           const signature = urlParams.get('sig'); // 보안 서명
 
+          console.log(`DEBUG_PARAMS: userId=${userId}, chatId=${chatId}, signature=${signature}`);
+
+
           if (!userId || !chatId || !signature) {
               console.error('❌ URL 파라미터에 user_id, chat_id 또는 sig가 누락되었습니다.');
               accessDeniedDiv.querySelector('p').textContent = '에러: 필수 정보가 누락되어 인증할 수 없습니다.';
