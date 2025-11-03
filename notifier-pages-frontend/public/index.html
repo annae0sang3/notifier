@@ -257,6 +257,13 @@
         margin-top: 10px; /* 상단 여백 추가 등 */
     }
 
+    #access-denied {
+      display: none; /* 💥💥💥 초기에는 display: none;으로 숨김 💥💥💥 */
+      margin-top: 50px; 
+      color: #dc3545; 
+      font-weight:600;
+    }
+
 
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -274,13 +281,14 @@
     </div>
 
 
-    <div id="telegram-info" style="padding: 16px; background: #eef; border-radius: 8px; margin: 16px;">
+    <div id="telegram-info" style="padding: 16px; background: #eef; border-radius: 8px; margin: 16px; display: none;">
       Telegram WebApp 정보 로딩 중...
     </div>
     
     <!-- ❗ 인증 실패 시 메시지 표시 -->
     <div id="access-denied" style="display:none; margin-top: 50px; color: #dc3545; font-weight:600;">
-      이 미니앱은 특정 텔레그램 단체방 멤버만 접근할 수 있습니다.
+      <!-- JavaScript에서 동적으로 내용 채움 -->
+      <p>이 미니앱은 특정 텔레그램 단체방 멤버만 접근할 수 없습니다.</p>
     </div>
 
     <div id="main-content" class="schedule-list"></div>
@@ -339,7 +347,7 @@
 
     </div>
     
-    <div id="settings-modal">
+    <!-- <div id="settings-modal"> ---------------중복---삭제--------------------------------------
       <!-- ... (기존 설정 모달 내용) ... -->
     </div>
 
@@ -353,7 +361,7 @@
         <span class="material-icons">settings</span>
         설정
       </a>
-    </div>
+    </div> --> ------------------------------------------------------------------------------
 
 
 
@@ -363,743 +371,380 @@
   
     <script>
         // ✅ 전역 상수 및 유틸리티
-        const DAYS = ['일', '월', '화', '수', '목', '금', '토']; // 요일 배열 (기존 코드에서 사용 중)
-        let currentDate = new Date(); // 현재 표시되는 월/년 (기존 코드에서 사용 중)
-        // 백엔드 Worker의 기본 URL. 필요에 따라 변경해주세요.
-        // 예시: 'https://your-worker-name.your-username.workers.dev/'
-        // 주의: 마지막에 슬래시 '/'는 넣지 말것.
-        const WORKER_API_BASE = 'https://notifier-worker-backend.annae0sang3.workers.dev'; 
+      const DAYS = ['일', '월', '화', '수', '목', '금', '토']; 
+      let currentDate = new Date(); 
+      const WORKER_API_BASE = 'https://your-worker-api-base-url.workers.dev'; // 💥💥💥 케이오님 실제 Worker URL로 변경! 💥💥💥
 
-        // =========================================================================
-        // ✅ 텔레그램 WebApp 및 사용자 검증 로직
-        // =========================================================================
-        let currentUserId = null; // 💥 검증된 사용자 ID를 저장할 전역 변수
+      // =========================================================================
+      // ✅ 텔레그램 WebApp 및 사용자 검증 로직 (URL 파라미터 기반으로 변경)
+      // =========================================================================
+      let currentUserId = null; // 💥 검증된 사용자 ID를 저장할 전역 변수
+      let currentChatId = null; // 💥 현재 미니앱이 열린 채팅방 ID 저장할 전역 변수
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            const appRoot = document.getElementById('app-root');
-            const headerElement = document.querySelector('.header');
-            const mainContentElement = document.getElementById('main-content');
-            const footerNavElement = document.querySelector('.footer-nav');
-            const telegramInfoDiv = document.getElementById('telegram-info');
-            const accessDeniedDiv = document.getElementById('access-denied');
+      document.addEventListener('DOMContentLoaded', async () => {
+          const headerElement = document.querySelector('.header');
+          const mainContentElement = document.getElementById('main-content');
+          const footerNavElement = document.querySelector('.footer-nav');
+          const telegramInfoDiv = document.getElementById('telegram-info');
+          const accessDeniedDiv = document.getElementById('access-denied');
+          // const telegramInfoDeniedDiv = document.getElementById('telegram-info-denied'); // #access-denied 내부에 바로 메시지 표시할 것이므로 별도 div 필요 없음
 
-            // --- 텔레그램 미니앱 환경 체크 ---
-            if (typeof Telegram === 'undefined' || !window.Telegram.WebApp) {
-                console.log('❌ 텔레그램 미니앱 환경이 아닙니다. 일반 웹페이지로 열렸습니다.');
-                telegramInfoDiv.innerHTML = '<p>이 앱은 텔레그램 미니앱 환경에서만 동작합니다.</p>';
-                headerElement.style.display = 'none';
-                mainContentElement.style.display = 'none';
-                //footerNavElement.style.display = 'none';
-                accessDeniedDiv.style.display = 'block'; // 비접근 메시지 활성화
-                return; 
-            }
+          // 초기 UI 숨기기
+          headerElement.style.display = 'none';
+          mainContentElement.style.display = 'none';
+          footerNavElement.style.display = 'none';
+          telegramInfoDiv.style.display = 'none'; // 초기 정보창도 숨김
 
-            // 텔레그램 WebApp 준비 완료 알림
-            window.Telegram.WebApp.ready(); 
-            // 미니앱을 최대 높이로 확장 (필요시)
-            // window.Telegram.WebApp.expand(); 
+          // 텔레그램 WebApp 스크립트 로드 여부 및 존재 여부 확인
+          if (typeof Telegram === 'undefined' || !window.Telegram.WebApp) {
+              console.log('❌ 텔레그램 미니앱 환경이 아닙니다. 일반 웹페이지로 열렸습니다.');
+              accessDeniedDiv.querySelector('p').textContent = '이 앱은 텔레그램 미니앱 환경에서만 동작합니다.';
+              accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
+              return;
+          }
+
+          // 텔레그램 WebApp 준비 완료 알림
+          window.Telegram.WebApp.ready(); 
+          
+          // 💥💥💥 URL 쿼리 파라미터에서 user_id, chat_id, sig를 추출합니다! 💥💥💥
+          const urlParams = new URLSearchParams(window.location.search);
+          const userId = urlParams.get('user_id');
+          const chatId = urlParams.get('chat_id');
+          const signature = urlParams.get('sig'); // 보안 서명
+
+          if (!userId || !chatId || !signature) {
+              console.error('❌ URL 파라미터에 user_id, chat_id 또는 sig가 누락되었습니다.');
+              accessDeniedDiv.querySelector('p').textContent = '에러: 필수 정보가 누락되어 인증할 수 없습니다.';
+              accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
+              return;
+          }
+
+          console.log(`URL Params from Frontend: userId=${userId}, chatId=${chatId}, signature=${signature}`);
+
+          try {
+              // 백엔드 Workers의 '/verify_params' 엔드포인트로 추출한 정보를 전송하여 사용자 검증
+              const response = await fetch(`${WORKER_API_BASE}/verify_params`, { 
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId, chatId, signature }), 
+              });
+
+              const verificationResult = await response.json();
+
+              if (verificationResult.ok) {
+                  // ✅ 검증 성공 시
+                  const user = verificationResult.user || {};
+                  
+                  currentUserId = userId; // 💥 전역 변수에 저장
+                  currentChatId = chatId; // 💥 전역 변수에 저장
+
+                  telegramInfoDiv.innerHTML = `
+                      <p><strong>사용자 이름:</strong> ${user.first_name || `User ${user.id}`} (ID: ${user.id})</p>
+                      <p><strong>그룹 ID:</strong> ${verificationResult.chat_id}</p>
+                      <p style="color: #28a745; font-weight: 600;">✓ 인증 완료</p>
+                  `;
+                  telegramInfoDiv.style.display = 'block'; 
+                  accessDeniedDiv.style.display = 'none'; // 접근 거부 메시지는 숨김 (혹시 초기 display:block 설정되어 있을 경우 대비)
+
+                  // ✅ 검증 통과 후 미니앱의 주요 UI 요소들을 보이게 함
+                  headerElement.style.display = 'block';
+                  mainContentElement.style.display = 'block';
+                  footerNavElement.style.display = 'flex'; // footer-nav는 flex로 설정되어 있으므로
+                  
+                  goToToday(); // 오늘 날짜 스케줄 로드 시작
+              } else {
+                  // ❌ 검증 실패 시
+                  console.error('❌ 사용자 검증 실패:', verificationResult.reason);
+                  accessDeniedDiv.querySelector('p').textContent = `🚨 인증 실패: ${verificationResult.reason}`;
+                  accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
+                  // 텔레그램 Web App 닫기 (선택 사항)
+                  // window.Telegram.WebApp.close(); 
+              }
+          } catch (error) {
+              console.error('❌ 사용자 검증 중 통신 오류:', error);
+              accessDeniedDiv.querySelector('p').textContent = `🚨 인증 중 네트워크 오류: ${error.message}`;
+              accessDeniedDiv.style.display = 'block';
+              // window.Telegram.WebApp.close();
+          }
+      });
+
+      // =========================================================================
+      // ✅ 기존 스케줄 관련 함수들 (currentUserId를 사용하도록 수정)
+      // =========================================================================
+      
+      // updateMonthHeader, prevMonth, nextMonth, getDaysInMonth, scrollToTodayCard, createDutyCard 함수들은 변경 없이 기존 코드 그대로 유지합니다.
+      // 케이오님의 html 파일에 있던 내용들을 아래에 포함시켰습니다.
+
+      /**
+       * 월/년 헤더를 업데이트합니다.
+       */
+      function updateMonthHeader() {
+          const options = { year: 'numeric', month: 'long' };
+          document.getElementById('current-month-year').textContent = currentDate.toLocaleString('ko-KR', options);
+      }
+
+      /**
+       * 월 변경 (이전 달)
+       */
+      function prevMonth() {
+          currentDate.setMonth(currentDate.getMonth() - 1);
+          renderSchedule();
+      }
+
+      /**
+       * 월 변경 (다음 달)
+       */
+      function nextMonth() {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          renderSchedule();
+      }
+
+      /**
+       * 월의 마지막 날짜를 가져옵니다.
+       */
+      function getDaysInMonth(date) {
+          return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+      }
+
+      /**
+       * 오늘의 날짜 카드에 스크롤합니다.
+       */
+      function scrollToTodayCard() {
+          const todayCard = document.querySelector('.schedule-card.today');
+          const header = document.querySelector('.header'); 
+
+          if (todayCard && header) {
+              const headerHeight = header.offsetHeight; 
+              const targetScrollY = todayCard.offsetTop - headerHeight - 10;
+              window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
+          } else if (todayCard) {
+              todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+      }
+
+      /**
+       * 스케줄 카드를 생성합니다.
+       * 💥 백엔드 응답 형식에 맞춰 item.day, item.night1, item.night2로 수정했습니다.
+       */
+      function createDutyCard(dayNum, dayName, dateObj, dutyData = null) {
+        const today = new Date();
+        const isToday = dateObj.getDate() === today.getDate() &&
+                        dateObj.getMonth() === today.getMonth() &&
+                        dateObj.getFullYear() === today.getFullYear();
+
+        const isSaturday = dateObj.getDay() === 6;
+        const isSunday = dateObj.getDay() === 0;
+
+        let cardHtml = `<div class="schedule-card${isToday ? ' today' : ''}">`;
+        cardHtml += `
+            <div class="card-date">
+                <span class="day-num">${dayNum}</span>
+                <span class="day-name${isSaturday ? ' weekend-sat' : isSunday ? ' weekend-sun' : ''}">${dayName}</span>
+            </div>
+        `;
+
+        if (dutyData && (dutyData.day || dutyData.night1 || dutyData.night2)) {
+            let dayIcon = '', night1Icon = '', night2Icon = ''; // 아이콘 변수 분리
+            if (dutyData.type && dutyData.type.includes('주')) dayIcon = 'wb_sunny';
+            if (dutyData.type && dutyData.type.includes('야1')) night1Icon = 'nights_stay'; // nights_stay가 nightlight_round보다 어울림
+            if (dutyData.type && dutyData.type.includes('야2')) night2Icon = 'bedtime'; // 야간2는 bedtime
             
-            // --- initData 유효성 검사 및 백엔드 검증 ---
-            if (!window.Telegram.WebApp.initData) {
-                console.error('❌ initData가 비어있습니다. 미니앱 환경에서 제대로 로드되지 않았습니다.');
-                telegramInfoDiv.innerHTML = '<p style="color: #dc3545; font-weight: 600;">에러: initData가 누락되어 인증할 수 없습니다.</p>';
-                headerElement.style.display = 'none';
-                mainContentElement.style.display = 'none';
-                footerNavElement.style.display = 'none';
-                accessDeniedDiv.style.display = 'block'; // 비접근 메시지 활성화
-                return;
-            }
-
-            console.log('초기 initData:', window.Telegram.WebApp.initData);
-
-            try {
-                // 백엔드 Workers의 '/verify' 엔드포인트로 initData를 전송하여 사용자 검증
-                const response = await fetch(`${WORKER_API_BASE}/verify`, { // 💥 /verify 엔드포인트 호출
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ initData: window.Telegram.WebApp.initData }),
-                });
-
-                const verificationResult = await response.json();
-
-                if (verificationResult.ok) {
-                    // ✅ 검증 성공 시
-                    const user = verificationResult.user || {};
-                    const chat = verificationResult.chat || {}; // 현재 chat 정보는 verify에서 반환하지 않으므로 비워둘 수 있음
-
-                    currentUserId = user.id; // 💥 검증된 사용자 ID 전역 변수에 저장
-
-                    telegramInfoDiv.innerHTML = `
-                        <p><strong>사용자 이름:</strong> ${user.first_name || 'N/A'} (ID: ${user.id || 'N/A'})</p>
-                        <p style="color: #28a745; font-weight: 600;">✓ 인증 완료</p>
-                    `;
-                    telegramInfoDiv.style.display = 'block'; // 정보는 보이게 하고
-                    accessDeniedDiv.style.display = 'none'; // 접근 거부 메시지는 숨김
-
-                    // ✅ 검증 통과 후 미니앱의 주요 UI 요소들을 보이게 함
-                    headerElement.style.display = 'block';
-                    mainContentElement.style.display = 'block';
-                    footerNavElement.style.display = 'flex'; // footer-nav는 flex로 설정되어 있으므로
-                    
-                    goToToday(); // 오늘 날짜 스케줄 로드 시작
-                } else {
-                    // ❌ 검증 실패 시
-                    console.error('❌ 사용자 검증 실패:', verificationResult.reason);
-                    telegramInfoDiv.innerHTML = `<p style="color: #dc3545; font-weight: 600;">🚨 인증 실패: ${verificationResult.reason}</p>`;
-                    telegramInfoDiv.style.display = 'block'; // 실패 정보는 보이게 하고
-                    
-                    headerElement.style.display = 'none';
-                    mainContentElement.style.display = 'none';
-                    footerNavElement.style.display = 'none';
-                    accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
-
-                    // 텔레그램 Web App 닫기 (선택 사항)
-                    // window.Telegram.WebApp.close(); 
-                }
-            } catch (error) {
-                console.error('❌ 사용자 검증 중 통신 오류:', error);
-                telegramInfoDiv.innerHTML = `<p style="color: #dc3545; font-weight: 600;">🚨 인증 중 네트워크 오류: ${error.message}</p>`;
-                telegramInfoDiv.style.display = 'block';
-                headerElement.style.display = 'none';
-                mainContentElement.style.display = 'none';
-                footerNavElement.style.display = 'none';
-                accessDeniedDiv.style.display = 'block';
-                // window.Telegram.WebApp.close();
-            }
-        });
-
-        // =========================================================================
-        // ✅ 기존 스케줄 관련 함수들 (currentUserId를 사용하도록 수정)
-        // =========================================================================
-        
-        /**
-         * 월/년 헤더를 업데이트합니다. (기존 코드 유지)
-         */
-        function updateMonthHeader() {
-            const options = { year: 'numeric', month: 'long' };
-            document.getElementById('current-month-year').textContent = currentDate.toLocaleString('ko-KR', options);
-        }
-
-        /**
-         * 월 변경 (이전 달)
-         */
-        function prevMonth() {
-            currentDate.setMonth(currentDate.getMonth() - 1);
-            renderSchedule(); // userId는 renderSchedule 내부에서 currentUserId 참조
-        }
-
-        /**
-         * 월 변경 (다음 달)
-         */
-        function nextMonth() {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            renderSchedule(); // userId는 renderSchedule 내부에서 currentUserId 참조
-        }
-
-        /**
-         * 월의 마지막 날짜를 가져옵니다. (기존 코드 유지)
-         * @param {Date} date
-         * @returns {number}
-         */
-        function getDaysInMonth(date) {
-            return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-        }
-
-        /**
-         * 오늘의 날짜 카드에 스크롤합니다. (기존 코드 유지)
-         */
-        function scrollToTodayCard() {
-            const todayCard = document.querySelector('.schedule-card.today');
-            const header = document.querySelector('.header'); 
-
-            if (todayCard && header) {
-                const headerHeight = header.offsetHeight; 
-                const targetScrollY = todayCard.offsetTop - headerHeight - 10;
-                window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
-            } else if (todayCard) {
-                todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }
-
-        /**
-         * 스케줄 카드를 생성합니다. (기존 코드 유지)
-         */
-        function createDutyCard(dayNum, dayName, dateObj, dutyData = null) {
-            const today = new Date();
-            const isToday = dateObj.getDate() === today.getDate() &&
-                            dateObj.getMonth() === today.getMonth() &&
-                            dateObj.getFullYear() === today.getFullYear();
-
-            const isSaturday = dateObj.getDay() === 6;
-            const isSunday = dateObj.getDay() === 0;
-
-            let cardHtml = `<div class="schedule-card${isToday ? ' today' : ''}">`;
             cardHtml += `
-                <div class="card-date">
-                    <span class="day-num">${dayNum}</span>
-                    <span class="day-name${isSaturday ? ' weekend-sat' : isSunday ? ' weekend-sun' : ''}">${dayName}</span>
+                <div class="card-duties">
+                    ${dutyData.day ? `
+                        <div class="duty-col day-duty-col">
+                            <span class="material-icons duty-icon day-icon">${dayIcon}</span>
+                            <span>${dutyData.day}</span>
+                        </div>` : '<div class="duty-col day-duty-col"></div>'}
+                    ${(dutyData.night1 || dutyData.night2) ? `
+                        <div class="duty-col night-duty-col">
+                            ${dutyData.night1 ? `<span class="material-icons duty-icon night-icon">${night1Icon}</span>` : ''}
+                            ${dutyData.night2 ? `<span class="material-icons duty-icon night2-icon">${night2Icon}</span>` : ''}
+                            <span>${dutyData.night1 || ''} ${(dutyData.night1 && dutyData.night2) ? ',' : ''} ${dutyData.night2 || ''}</span>
+                        </div>` : '<div class="duty-col night-duty-col"></div>'}
                 </div>
             `;
+        } else {
+            cardHtml += `
+                <div class="card-duties" style="text-align: center;">
+                    <span style="color: #aaa;">스케줄 없음</span>
+                </div>
+            `;
+        }
+        cardHtml += `</div>`;
+        return cardHtml;
+    }
 
-            // 당직 데이터가 있을 경우 표시 (없으면 '데이터 없음')
-            if (dutyData) {
-                let dayIcon = '', nightIcon = '', mixedIcon = '';
-                if (dutyData.type.includes('주')) dayIcon = 'wb_sunny';
-                if (dutyData.type.includes('야1')) nightIcon = 'nightlight_round';
-                if (dutyData.type.includes('야2')) mixedIcon = 'brightness_3'; // mixed_icon은 그냥 night_icon으로 통일할 수도
-                
-                cardHtml += `
-                    <div class="card-duties">
-                        ${dutyData.day ? `
-                            <div class="day-duty-col">
-                                <span class="material-icons duty-icon day-icon">${dayIcon}</span>
-                                <span>${dutyData.day}</span>
-                            </div>` : '<div class="day-duty-col"></div>'}
-                        ${(dutyData.night1 || dutyData.night2) ? `
-                            <div class="night-duty-col">
-                                <span class="material-icons duty-icon night-icon">${nightIcon}</span>
-                                <span>${dutyData.night1 || ''} ${(dutyData.night1 && dutyData.night2) ? ',' : ''} ${dutyData.night2 || ''}</span>
-                            </div>` : '<div class="night-duty-col"></div>'}
-                    </div>
-                `;
+
+      /**
+       * 스케줄을 렌더링하고, 필요 시 오늘 날짜로 스크롤합니다.
+       * 💥 currentUserId와 currentChatId를 사용하여 백엔드 요청 시 활용합니다.
+       * @param {boolean} [scrollToToday=false] 렌더링 후 오늘 날짜로 스크롤할지 여부
+       */
+      async function renderSchedule(scrollToToday = false) { 
+          // 💥 검증되지 않은 사용자 ID라면 스케줄 로드를 중단합니다.
+          if (!currentUserId || !currentChatId) { // user ID 또는 chat ID가 없으면 스케줄 로드 중단
+              console.warn('사용자/채팅방 ID가 없어 스케줄을 로드할 수 없습니다.');
+              document.getElementById('main-content').innerHTML = `
+                  <p style="text-align: center; color: #dc3545; margin-top: 50px;">
+                      사용자/채팅방 인증이 필요하거나 실패했습니다.
+                  </p>
+              `;
+              return;
+          }
+
+          updateMonthHeader();
+          const el = document.getElementById('main-content');
+          el.innerHTML = '';
+          const year = currentDate.getFullYear();
+          const month = currentDate.getMonth() + 1;
+          const start = `${year}-${String(month).padStart(2,'0')}-01`;
+          const end = `${year}-${String(month).padStart(2,'0')}-${String(getDaysInMonth(currentDate)).padStart(2,'0')}`;
+
+          try {
+              const res = await fetch(`${WORKER_API_BASE}/api/schedule?start=${start}&end=${end}`, {
+                  // 백엔드에서 사용자별 스케줄 로직이 필요한 경우, userId와 chatId를 헤더로 보낼 수 있습니다.
+                  headers: { 'X-User-Id': currentUserId, 'X-Chat-Id': currentChatId } 
+              });
+
+              if (!res.ok) {
+                  const errorData = await res.json().catch(() => ({ error: '서버 응답 오류 (JSON 파싱 실패)' }));
+                  throw new Error(errorData.error || '알 수 없는 서버 오류');
+              }
+              const data = await res.json();
+
+              if (!Array.isArray(data)) {
+                  throw new Error(data.error || '예상치 못한 데이터 형식');
+              }
+
+              // 렌더링
+              if (data.length > 0) {
+                  el.innerHTML = data.map(item => {
+                      const d = new Date(item.date); 
+                      // 백엔드 /api/schedule 응답 구조에 맞춰 item.day, item.night1, item.night2 입니다.
+                      const dutyDisplayData = {
+                          day: item.day,
+                          night1: item.night1,
+                          night2: item.night2,
+                          type: item.type // '주' '야' '비' 구분을 위해 type도 전달
+                      };
+                      return createDutyCard(d.getDate(), DAYS[d.getDay()], d, dutyDisplayData);
+                  }).join('');
+              } else {
+                  el.innerHTML = `<p style="text-align: center; margin-top: 50px;">해당 월의 스케줄이 없습니다.</p>`;
+              }
+              
+              if (scrollToToday) {
+                  scrollToTodayCard();
+              }
+
+          } catch (error) { 
+              console.error('스케줄 데이터를 불러오는 중 오류 발생:', error);
+              
+              const days = getDaysInMonth(currentDate);
+              let fallbackHtml = '';
+              for (let i = 1; i <= days; i++) {
+                  const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
+                  // 오류 발생 시에는 dutyData를 null로 전달하여 '스케줄 없음' 표시
+                  fallbackHtml += createDutyCard(i, DAYS[date.getDay()], date, null); 
+              }
+              el.innerHTML = fallbackHtml; 
+              showToast(`스케줄 데이터를 불러올 수 없습니다. (${error.message || "네트워크 오류"})`);
+          }
+      }
+
+      // '오늘' 버튼 클릭 시 실행 함수
+      function goToToday() {
+          currentDate = new Date(); 
+          renderSchedule(true); // 스크롤 플래그를 true로 전달
+      }
+
+      // =========================================================================
+      // ✅ 설정 모달 관련 함수 (기존 코드 유지)
+      // =========================================================================
+      // openSettingsModal, closeSettingsModal, saveDutyCycle, showToast 함수들은 변경 없이 기존 코드 그대로 유지합니다.
+      // 케이오님의 html 파일에 있던 내용들을 아래에 포함시켰습니다.
+
+      async function openSettingsModal() {
+        document.getElementById('settings-modal').style.display = 'flex';
+        try {
+            const res = await fetch(`${WORKER_API_BASE}/api/settings`);
+            const settings = await res.json();
+            if (settings.cycle) {
+                document.getElementById('duty-cycle').value = settings.cycle;
+            }
+            if (settings.baseDate) {
+                document.getElementById('duty-base-date').value = settings.baseDate.substring(0, 10);
+            }
+            if (settings.users && Array.isArray(settings.users)) {
+                document.getElementById('duty-users').value = settings.users.join(' ');
+            }
+        } catch (e) {
+            console.error('Failed to load settings:', e);
+            showToast('Failed to load settings.');
+        }
+      }
+
+      function closeSettingsModal() {
+          document.getElementById('settings-modal').style.display = 'none';
+      }
+
+      async function saveDutyCycle() {
+        const dutyCycle = document.getElementById('duty-cycle').value;
+        const dutyBaseDate = document.getElementById('duty-base-date').value;
+        const dutyUsers = document.getElementById('duty-users').value;
+        const usersArray = dutyUsers.split(' ').filter(u => u.trim() !== '');
+
+        try {
+            const res = await fetch(`${WORKER_API_BASE}/api/settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cycle: dutyCycle,
+                    baseDate: dutyBaseDate,
+                    users: usersArray
+                })
+            });
+
+            if (res.ok) {
+                showToast('설정이 성공적으로 저장되었습니다!');
+                closeSettingsModal();
+                renderSchedule(); // 설정 변경 후 스케줄 새로고침
             } else {
-                cardHtml += `
-                    <div class="card-duties" style="text-align: center;">
-                        <span style="color: #aaa;">스케줄 없음</span>
-                    </div>
-                `;
+                const errorData = await res.json();
+                showToast(`설정 저장 실패: ${errorData.error || res.statusText}`);
             }
-            cardHtml += `</div>`;
-            return cardHtml;
+        } catch (e) {
+            console.error('Failed to save settings:', e);
+            showToast('설정 저장 중 오류가 발생했습니다.');
         }
-
-
-        /**
-         * 스케줄을 렌더링하고, 필요 시 오늘 날짜로 스크롤합니다.
-         * 💥 currentUserId를 사용하도록 수정되었습니다.
-         * @param {boolean} [scrollToToday=false] 렌더링 후 오늘 날짜로 스크롤할지 여부
-         */
-        async function renderSchedule(scrollToToday = false) { 
-            // 💥 검증되지 않은 사용자 ID라면 스케줄 로드를 중단합니다.
-            if (!currentUserId) {
-                console.warn('사용자 ID가 없어 스케줄을 로드할 수 없습니다.');
-                document.getElementById('main-content').innerHTML = `
-                    <p style="text-align: center; color: #dc3545; margin-top: 50px;">
-                        사용자 인증이 필요하거나 실패했습니다.
-                    </p>
-                `;
-                return;
-            }
-
-            updateMonthHeader();
-            const el = document.getElementById('main-content');
-            el.innerHTML = '';
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth() + 1;
-            const start = `${year}-${String(month).padStart(2,'0')}-01`;
-            const end = `${year}-${String(month).padStart(2,'0')}-${String(getDaysInMonth(currentDate)).padStart(2,'0')}`;
-
-            try {
-                // 💥 `/api/schedule` 호출 시 필요시 currentUserId를 백엔드로 보낼 수 있습니다.
-                // 백엔드 Worker에서 userId를 사용하여 개인화된 스케줄 또는 권한 확인 가능.
-                // 현재 케이오님의 Workers는 userId를 직접 활용하여 스케줄을 필터링하지는 않으므로,
-                // 여기서는 헤더에만 추가하여 백엔드에서 필요시 참조하도록 함.
-                const res = await fetch(`${WORKER_API_BASE}/api/schedule?start=${start}&end=${end}`, {
-                    headers: { 'X-User-Id': currentUserId } 
-                });
-
-                if (!res.ok) {
-                    const errorData = await res.json().catch(() => ({ error: '서버 응답 오류 (JSON 파싱 실패)' }));
-                    throw new Error(errorData.error || '알 수 없는 서버 오류');
-                }
-                const data = await res.json();
-
-                if (!Array.isArray(data)) {
-                    throw new Error(data.error || '예상치 못한 데이터 형식');
-                }
-
-                // 렌더링
-                if (data.length > 0) {
-                    el.innerHTML = data.map(item => {
-                        const d = new Date(item.date); 
-                        return createDutyCard(d.getDate(), DAYS[d.getDay()], d, item.duty);
-                    }).join('');
-                } else {
-                    el.innerHTML = `<p style="text-align: center; margin-top: 50px;">해당 월의 스케줄이 없습니다.</p>`;
-                }
-                
-                // 스크롤 로직 실행
-                if (scrollToToday) {
-                    scrollToTodayCard();
-                }
-
-            } catch (error) { 
-                console.error('스케줄 데이터를 불러오는 중 오류 발생:', error);
-                
-                // 오류 발생 시에도 날짜 카드 형식만 보여주기
-                const days = getDaysInMonth(currentDate);
-                let fallbackHtml = '';
-                for (let i = 1; i <= days; i++) {
-                    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
-                    fallbackHtml += createDutyCard(i, DAYS[date.getDay()], date); 
-                }
-                el.innerHTML = fallbackHtml; // 오류 발생시 더미 카드라도 보여줌
-                showToast(`스케줄 데이터를 불러올 수 없습니다. (${error.message || "네트워크 오류"})`);
-            }
-        }
-
-        // '오늘' 버튼 클릭 시 실행 함수
-        function goToToday() {
-            currentDate = new Date(); 
-            renderSchedule(true); // 스크롤 플래그를 true로 전달
-        }
-
-        // =========================================================================
-        // ✅ 설정 모달 관련 함수 (기존 코드 유지)
-        // =========================================================================
-        async function openSettingsModal() {
-            document.getElementById('settings-modal').style.display = 'flex';
-            try {
-                const res = await fetch(`${WORKER_API_BASE}/api/settings`);
-                const settings = await res.json();
-                if (settings.cycle) {
-                    document.getElementById('duty-cycle').value = settings.cycle;
-                }
-                if (settings.baseDate) {
-                    document.getElementById('duty-base-date').value = settings.baseDate.substring(0, 10);
-                }
-                if (settings.users && Array.isArray(settings.users)) {
-                    document.getElementById('duty-users').value = settings.users.join(' ');
-                }
-            } catch (e) {
-                console.error('Failed to load settings:', e);
-                showToast('Failed to load settings.');
-            }
-        }
-
-        function closeSettingsModal() {
-            document.getElementById('settings-modal').style.display = 'none';
-        }
-
-        // 설정 저장 함수 (기존 코드 유지)
-        async function saveDutyCycle() {
-            const dutyCycle = document.getElementById('duty-cycle').value;
-            const dutyBaseDate = document.getElementById('duty-base-date').value;
-            const dutyUsers = document.getElementById('duty-users').value;
-            const usersArray = dutyUsers.split(' ').filter(u => u.trim() !== '');
-
-            try {
-                const res = await fetch(`${WORKER_API_BASE}/api/settings`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        cycle: dutyCycle,
-                        baseDate: dutyBaseDate,
-                        users: usersArray
-                    })
-                });
-
-                if (res.ok) {
-                    showToast('설정이 성공적으로 저장되었습니다!');
-                    closeSettingsModal();
-                    renderSchedule(); // 설정 변경 후 스케줄 새로고침
-                } else {
-                    const errorData = await res.json();
-                    showToast(`설정 저장 실패: ${errorData.error || res.statusText}`);
-                }
-            } catch (e) {
-                console.error('Failed to save settings:', e);
-                showToast('설정 저장 중 오류가 발생했습니다.');
-            }
-        }
-
-        // 토스트 메시지 함수 (기존 코드 유지)
-        function showToast(message, duration = 3000) {
-            let toast = document.getElementById('toast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'toast';
-                toast.style.cssText = `
-                    position: fixed;
-                    bottom: 20px; left: 50%;
-                    transform: translateX(-50%);
-                    background-color: rgba(0,0,0,0.7);
-                    color: white;
-                    padding: 10px 20px;
-                    border-radius: 5px;
-                    z-index: 1000;
-                    opacity: 0;
-                    transition: opacity 0.3s ease-in-out;
-                    font-size: 0.9em;
-                `;
-                document.body.appendChild(toast);
-            }
-            toast.textContent = message;
-            toast.style.opacity = '1';
-
-            setTimeout(() => {
-                toast.style.opacity = '0';
-            }, duration);
-        }
-       
-      </script>
-    </body>
-    </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- 임시 주석 - 아래 전부
-  
-  <script>
-    const WORKER_API_BASE = 'https://notifier-worker-backend.annae0sang3.workers.dev/';
-    const DAYS = ['일','월','화','수','목','금','토'];
-    let currentDate = new Date();
-
-    function updateMonthHeader() {
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth() + 1;
-      document.getElementById('current-month-year').textContent = `${year}년 ${month}월`;
-    }
-
-    function getDaysInMonth(date) {
-      return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    }
-
-    function showToast(message) {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 3000);
-    }
-
-    /**
-     * 날짜 카드 HTML을 생성하고 스타일 클래스를 적용합니다.
-     */
-    function createDutyCard(dayNum, dayName, date, duty = { day: [], night: [] }) {
-      
-      // 1. 근무 타입 아이콘 결정
-      let icon = '';
-      if (duty.day.length > 0 && duty.night.length === 0) {
-        icon = '<span class="material-icons duty-icon day-icon">wb_sunny</span>'; // 주간: 태양 ☀️
-      } else if (duty.night.length > 0 && duty.day.length === 0) {
-        icon = '<span class="material-icons duty-icon night-icon">nights_stay</span>'; // 야간: 초승달 🌙
-      } else if (duty.day.length > 0 && duty.night.length > 0) {
-        icon = '<span class="material-icons duty-icon mixed-icon">star_half</span>'; // 혼합: 반쪽 별
       }
 
-      // 2. 주말 색상 클래스 결정
-      let dayClass = '';
-      if (dayName === '토') {
-        dayClass = 'weekend-sat';
-      } else if (dayName === '일') {
-        dayClass = 'weekend-sun';
+      function showToast(message, duration = 3000) {
+        let toast = document.getElementById('toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'toast';
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px; left: 50%;
+                transform: translateX(-50%);
+                background-color: rgba(0,0,0,0.7);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 5px;
+                z-index: 1000;
+                opacity: 0;
+                transition: opacity 0.3s ease-in-out;
+                font-size: 0.9em;
+            `;
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.style.opacity = '1';
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+        }, duration);
       }
-
-      // 3. 오늘 날짜 강조 클래스 결정
-      let todayClass = '';
-      const today = new Date();
-      if (date.getDate() === today.getDate() && 
-          date.getMonth() === today.getMonth() && 
-          date.getFullYear() === today.getFullYear()) {
-          todayClass = 'today';
-      }
-      
-      const dayDuty = duty.day.join(', ') || '-';
-      const nightDuty = duty.night.join(', ') || '-';
-      
-      return `
-        <div class='schedule-card ${todayClass}'>
-          <div class='card-date'>
-            ${icon} 
-            <div class='day-num'>${String(dayNum).padStart(2,'0')}</div>
-            <div class='day-name ${dayClass}'>${dayName}</div>
-          </div>
-          <div class='card-duties'>
-            <div class="day-duty-col">${dayDuty}</div>
-            <div class="night-duty-col">${nightDuty}</div>
-          </div>
-        </div>`;
-    }
-
-    /**
-     * 오늘 날짜를 가진 카드(.schedule-card.today)로 스크롤하는 함수
-     */
-    function scrollToTodayCard() {
-      const todayCard = document.querySelector('.schedule-card.today');
-      const header = document.querySelector('.header'); // 헤더 요소 선택
-
-      if (todayCard && header) {
-          // 헤더 높이만큼의 오프셋을 계산합니다.
-          // header.offsetHeight는 헤더의 실제 높이를 반환합니다.
-          const headerHeight = header.offsetHeight; 
-          
-          // 스크롤할 최종 위치: 카드 위치 - 헤더 높이 - 여유 공간(10px)
-          const targetScrollY = todayCard.offsetTop - headerHeight - 10;
-          
-          // window.scrollTo를 사용하여 부드럽게 스크롤합니다.
-          window.scrollTo({
-              top: targetScrollY,
-              behavior: 'smooth'
-          });
-      } else if (todayCard) {
-          // 헤더를 찾지 못할 경우 기본 스크롤 (예비용)
-          todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
-
-    /**
-     * 스케줄을 렌더링하고, 필요 시 오늘 날짜로 스크롤합니다.
-     * @param {boolean} [scrollToToday=false] 렌더링 후 오늘 날짜로 스크롤할지 여부
-     */
-    async function renderSchedule(scrollToToday = false) { 
-      updateMonthHeader();
-      const el = document.getElementById('main-content');
-      el.innerHTML = '';
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth() + 1;
-      const start = `${year}-${String(month).padStart(2,'0')}-01`;
-      const end = `${year}-${String(month).padStart(2,'0')}-${String(getDaysInMonth(currentDate)).padStart(2,'0')}`;
-
-      try {
-        const res = await fetch(`${WORKER_API_BASE}api/schedule?start=${start}&end=${end}`);
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({ error: '서버 응답 오류 (JSON 파싱 실패)' }));
-          throw new Error(errorData.error || '알 수 없는 서버 오류');
-        }
-        const data = await res.json();
-
-        if (!Array.isArray(data)) {
-            throw new Error(data.error || '예상치 못한 데이터 형식');
-        }
-
-        // 렌더링
-        el.innerHTML = data.map(item => {
-          const d = new Date(item.date); 
-          return createDutyCard(d.getDate(), DAYS[d.getDay()], d, item.duty);
-        }).join('');
-        
-        // 스크롤 로직 실행
-        if (scrollToToday) {
-            scrollToTodayCard();
-        }
-
-      } catch (error) { 
-        console.error('스케줄 데이터를 불러오는 중 오류 발생:', error);
-        
-        // 오류 발생 시에도 날짜 카드 형식만 보여주기
-        const days = getDaysInMonth(currentDate);
-        for (let i = 1; i <= days; i++) {
-          const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
-          el.innerHTML += createDutyCard(i, DAYS[date.getDay()], date); 
-        }
-        showToast(`스케줄 데이터를 불러올 수 없습니다. (${error.message || "네트워크 오류"})`);
-      }
-    }
-
-    // '오늘' 버튼 클릭 시 실행 함수
-    function goToToday() {
-        currentDate = new Date(); 
-        renderSchedule(true); // 스크롤 플래그를 true로 전달
-    }
-
-    async function openSettingsModal() {
-      document.getElementById('settings-modal').style.display = 'flex';
-      // 설정 값 로딩 로직
-      try {
-        const res = await fetch(`${WORKER_API_BASE}api/settings`);
-        const settings = await res.json();
-        if (settings.cycle) {
-          document.getElementById('duty-cycle').value = settings.cycle;
-        }
-        if (settings.baseDate) {
-          document.getElementById('duty-base-date').value = settings.baseDate.substring(0, 10);
-        }
-        if (settings.users && Array.isArray(settings.users)) {
-          document.getElementById('duty-users').value = settings.users.join(' ');
-        }
-      } catch (e) {
-        console.error('Failed to load settings:', e);
-        showToast('Failed to load settings.');
-      }
-    }
-
-    function closeSettingsModal() {
-      document.getElementById('settings-modal').style.display = 'none';
-    }
-
-    async function saveDutyCycle() {
-      const cycle = document.getElementById('duty-cycle').value;
-      const baseDate = document.getElementById('duty-base-date').value; 
-      const users = document.getElementById('duty-users').value.split(/\s+/).filter(Boolean);
-      
-      if (users.length === 0) {
-        showToast('근무자 명단이 필요합니다.');
-        return;
-      }
-      
-      try {
-        const response = await fetch(`${WORKER_API_BASE}api/settings`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cycle, baseDate, users })
-        });
-        
-        if (!response.ok) { 
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || response.statusText || '알 수 없는 오류');
-        }
-        
-        showToast('설정이 저장되었습니다.');
-        closeSettingsModal();
-        renderSchedule();
-      } catch (e) {
-        showToast('설정 저장 실패: ' + e.message);
-      }
-    }
-
-    function prevMonth() { currentDate.setMonth(currentDate.getMonth() - 1); renderSchedule(false); }
-    function nextMonth() { currentDate.setMonth(currentDate.getMonth() + 1); renderSchedule(false); }
-
-    async function verifyTelegramUser() {
-      try {
-        // Telegram 미니앱 SDK에서 initData 가져오기
-
-// 아래 임시 테스트 ----------------------------------------------------
-        
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-
-        const initData = tg.initData; // 서명 검증용 원본 문자열
-        const chatIdFromStart = tg.initDataUnsafe?.start_param; // startapp payload (-100... 형태)
-
-        console.log(initData);
-        if (!initData) {
-          console.warn('initData가 비어 있음: Telegram Mini App 내에서 실행되어야 합니다.');
-          return false;
-        }
-        
-        const response = await fetch(`${WORKER_API_BASE}verify`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData, chat_id: chatIdFromStart })
-        });
-        
-// 여기까지 임시 테스트 ----------------------------------------------
-        
-// 위 테스트 후 아래 주석 복구 여부 검토 -------------------------------
-        
-        // const initData = window.Telegram.WebApp.initData || '';
-        // console.log(initData);
-        // if (!initData) {
-        //   console.warn('initData가 비어 있음: Telegram Mini App 내에서 실행되어야 합니다.');
-        //   return false;
-        // }
-
-        // // 백엔드 Worker로 검증 요청
-        // const response = await fetch(`${WORKER_API_BASE}verify`, {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({ initData }),
-        // });
-
-// 여기까지 복구 여부 검토 블럭 -------------------------------
-
-        const result = await response.json();
-        if (!result.ok) {
-          console.warn('검증 실패:', result.reason || '알 수 없는 이유');
-          return { ok: false, reason: result.reason || 'verification_failed' }; // 객체 반환
-        }
-
-        console.log('✅ 사용자 검증 성공:', result.user);
-        return { ok: true, user: result.user, chat: result.chat }; // 검증 성공 시 user, chat 정보 함께 반환!
-
-      } catch (err) {
-        console.error('검증 오류:', err);
-        return { ok: false, reason: 'error_during_verification' };
-      }
-    }
-
-    
-    // =========================================================================
-    // ✅ 메인 초기화 로직: DOMContentLoaded 이벤트 리스너
-    // =========================================================================
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      const infoDiv = document.getElementById('telegram-info');
-      const appRoot = document.getElementById('app-root'); // 네 미니앱의 메인 UI를 담는 요소
-
-      // --- 텔레그램 미니앱 환경 체크 및 초기화 ---
-      if (typeof Telegram !== 'undefined' && window.Telegram.WebApp) {
-        console.log('✅ 텔레그램 미니앱 환경입니다!');
-        window.Telegram.WebApp.ready(); // ✨ ready()는 여기서 한 번만 호출! ✨
-
-        // 텔레그램 봇의 web_app 버튼을 통해 실행되어야만 제대로 된 값이 들어와!
-        console.log('초기 initData:', window.Telegram.WebApp.initData);
-
-        // --- 텔레그램 미니앱 특정 기능 활용 (선택 사항) ---
-        // 백그라운드 색상이나 헤더 색상 설정 등
-        // window.Telegram.WebApp.setHeaderColor('#6A35C5'); 
-        // window.Telegram.WebApp.setBackgroundColor('#E0F7FA'); 
-        // window.Telegram.WebApp.expand(); // 미니앱을 최대 높이로 확장
-      
-      } else {
-        // 텔레그램 미니앱 환경이 아닐 때 처리
-        console.log('❌ 텔레그램 미니앱 환경이 아닙니다. 일반 웹페이지로 열렸습니다.');
-        // 접근 차단 처리 (Telegram 전용 앱이므로 중요)
-        document.querySelector('.header').style.display = 'none';
-        document.getElementById('main-content').style.display = 'none';
-        document.querySelector('.footer-nav').style.display = 'none';
-        document.getElementById('access-denied').style.display = 'block';
-        // appRoot.textContent = '이 앱은 텔레그램 미니앱 환경에서만 동작합니다.'; // 위 차단 로직이 있으면 필요 없을 수도
-        return; // 미니앱 환경이 아니면 더 이상 진행하지 않음
-      }
-
-    // --- 사용자 검증 ---
-    // ✅ 1️⃣ 먼저 사용자 검증
-    const verificationResult = await verifyTelegramUser(); // 변경된 반환값 사용
-
-    if (!verificationResult.ok) {
-      // 접근 차단 처리
-      document.querySelector('.header').style.display = 'none';
-      document.getElementById('main-content').style.display = 'none';
-      document.querySelector('.footer-nav').style.display = 'none';
-      document.getElementById('access-denied').style.display = 'block';
-      return;
-    }
-
-    // ✅ 2️⃣ 검증 통과 시 정상 동작 (user, chat 정보 활용)
-    // 여기부터는 verifiedResult.user, verifiedResult.chat 을 믿고 사용할 수 있어!
-    const user = verificationResult.user || {}; // 백엔드에서 받은 검증된 user 정보
-    const chat = verificationResult.chat || {}; // 백엔드에서 받은 검증된 chat 정보
-  
-    infoDiv.innerHTML = `
-        <p><strong>사용자 이름:</strong> ${user.first_name || 'N/A'} (ID: ${user.id || 'N/A'})</p>
-        <p><strong>채팅 이름:</strong> ${chat.title || 'N/A'} (ID: ${chat.id || 'N/A'})</p>
-        <p style="color: #28a745; font-weight: 600;">✓ 인증 완료</p>
-    `;
-
-    goToToday(); // currentDate를 오늘로 설정하고 renderSchedule(true) 호출
-  });
-   
-  </script>
-</body>
-</html> 
-
-임시 주석 -->
+    </script>
