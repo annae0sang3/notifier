@@ -414,6 +414,7 @@
 
           console.log(`DEBUG_PARAMS: userId=${userId}, chatId=${chatId}, signature=${signature}`);
 
+          console.log(`DEBUG_PAGES_FETCH_URL: ${WORKER_API_BASE}/verify_params`);
 
           if (!userId || !chatId || !signature) {
               console.error('❌ URL 파라미터에 user_id, chat_id 또는 sig가 누락되었습니다.');
@@ -446,12 +447,14 @@
                   currentUserId = userId; // 💥 전역 변수에 저장
                   currentChatId = chatId; // 💥 전역 변수에 저장
 
-                  telegramInfoDiv.innerHTML = `
-                      <p><strong>사용자 이름:</strong> ${user.first_name || `User ${user.id}`} (ID: ${user.id})</p>
-                      <p><strong>그룹 ID:</strong> ${verificationResult.chat_id}</p>
-                      <p style="color: #28a745; font-weight: 600;">✓ 인증 완료</p>
-                  `;
-                  telegramInfoDiv.style.display = 'block'; 
+                  // telegramInfoDiv.innerHTML = `
+                  //     <p><strong>사용자 이름:</strong> ${user.first_name || `User ${user.id}`} (ID: ${user.id})</p>
+                  //     <p><strong>그룹 ID:</strong> ${verificationResult.chat_id}</p>
+                  //     <p style="color: #28a745; font-weight: 600;">✓ 인증 완료</p>
+                  // `;
+                  // telegramInfoDiv.style.display = 'block'; 
+                  console.log(`✓ 인증 완료! 사용자 ID: ${userId}, 그룹 ID: ${chatId}`);  
+                
                   accessDeniedDiv.style.display = 'none'; // 접근 거부 메시지는 숨김 (혹시 초기 display:block 설정되어 있을 경우 대비)
 
                   // ✅ 검증 통과 후 미니앱의 주요 UI 요소들을 보이게 함
@@ -614,15 +617,25 @@
                   // 백엔드에서 사용자별 스케줄 로직이 필요한 경우, userId와 chatId를 헤더로 보낼 수 있습니다.
                   headers: { 'X-User-Id': currentUserId, 'X-Chat-Id': currentChatId } 
               });
+            
+              // 💥💥💥 스케줄 로딩 디버깅 로그 💥💥💥
+              const rawResponseText = await res.text();
+              console.log("DEBUG_SCHEDULE_RAW_RESPONSE:", rawResponseText);
 
               if (!res.ok) {
-                  const errorData = await res.json().catch(() => ({ error: '서버 응답 오류 (JSON 파싱 실패)' }));
-                  throw new Error(errorData.error || '알 수 없는 서버 오류');
+                  let errorMessage = '알 수 없는 서버 오류';
+                  try {
+                      const errorData = JSON.parse(rawResponseText);
+                      errorMessage = errorData.error || errorData.reason || errorMessage;
+                  } catch (e) { /* JSON 파싱 실패 시 그냥 텍스트 사용 */ }
+                  throw new Error(errorMessage);
               }
-              const data = await res.json();
+              const data = JSON.parse(rawResponseText); // rawResponseText를 JSON으로 파싱
+
+              console.log("DEBUG_SCHEDULE_PARSED_DATA:", data); // 파싱된 데이터 확인
 
               if (!Array.isArray(data)) {
-                  throw new Error(data.error || '예상치 못한 데이터 형식');
+                  throw new Error(data.error || '예상치 못한 데이터 형식: 배열이 아님');
               }
 
               // 렌더링
