@@ -528,38 +528,53 @@
         const isSunday = dateObj.getDay() === 0;
 
         let cardHtml = `<div class="schedule-card${isToday ? ' today' : ''}">`;
+        
+        // 아이콘 결정을 위한 변수 초기화
+        let dutyIconHtml = ''; // 💥 날짜 옆에 표시될 아이콘 HTML
+        if (dutyData && dutyData.type) {
+            if (dutyData.type === '주') {
+                dutyIconHtml = `<span class="material-icons duty-icon day-icon">wb_sunny</span>`;
+            } else if (dutyData.type === '야1') { // 야간 타입 (야간1/2 아이콘은 대표로 야간1에서 사용)
+                dutyIconHtml = `<span class="material-icons duty-icon night-icon">nights_stay</span>`;
+            }
+        }
+
+
+        // 💥💥💥 날짜 영역 HTML 구조 변경: 아이콘을 card-date 안에 날짜보다 먼저 위치시킵니다. 💥💥💥
         cardHtml += `
             <div class="card-date">
+                ${dutyIconHtml} <!-- 💥 아이콘은 여기에 위치! 💥 -->
                 <span class="day-num">${dayNum}</span>
                 <span class="day-name${isSaturday ? ' weekend-sat' : isSunday ? ' weekend-sun' : ''}">${dayName}</span>
             </div>
         `;
 
+        // 💥💥💥 스케줄 데이터 처리 로직은 그대로 유지 💥💥💥
         if (dutyData && (dutyData.day || dutyData.night1 || dutyData.night2)) {
-            let dayIcon = '', night1Icon = '', night2Icon = ''; // 아이콘 변수 분리
-            if (dutyData.type && dutyData.type.includes('주')) dayIcon = 'wb_sunny';
-            if (dutyData.type && dutyData.type.includes('야1')) night1Icon = 'nights_stay'; // nights_stay가 nightlight_round보다 어울림
-            if (dutyData.type && dutyData.type.includes('야2')) night2Icon = 'bedtime'; // 야간2는 bedtime
-            
             cardHtml += `
                 <div class="card-duties">
-                    ${dutyData.day ? `
-                        <div class="duty-col day-duty-col">
-                            <span class="material-icons duty-icon day-icon">${dayIcon}</span>
+                    <!-- 주간 근무자 영역 -->
+                    <div class="duty-col day-duty-col">
+                        ${dutyData.day ? `
                             <span>${dutyData.day}</span>
-                        </div>` : '<div class="duty-col day-duty-col"></div>'}
-                    ${(dutyData.night1 || dutyData.night2) ? `
-                        <div class="duty-col night-duty-col">
-                            ${dutyData.night1 ? `<span class="material-icons duty-icon night-icon">${night1Icon}</span>` : ''}
-                            ${dutyData.night2 ? `<span class="material-icons duty-icon night2-icon">${night2Icon}</span>` : ''}
-                            <span>${dutyData.night1 || ''} ${(dutyData.night1 && dutyData.night2) ? ',' : ''} ${dutyData.night2 || ''}</span>
-                        </div>` : '<div class="duty-col night-duty-col"></div>'}
+                        ` : ''}
+                    </div>
+                    <!-- 야간 근무자 영역 -->
+                    <div class="duty-col night-duty-col">
+                        ${(dutyData.night1 || dutyData.night2) ? `
+                            <span>
+                                ${dutyData.night1 || ''} 
+                                ${ (dutyData.night1 && dutyData.night2) ? `, ` : '' } 
+                                ${dutyData.night2 || ''}
+                            </span>
+                        ` : ''}
+                    </div>
                 </div>
             `;
         } else {
             cardHtml += `
                 <div class="card-duties" style="text-align: center;">
-                    <span style="color: #aaa;">스케줄 없음</span>
+                    <span style="color: #aaa;">${dutyData && dutyData.type === '비' ? '비번' : '스케줄 없음'}</span>
                 </div>
             `;
         }
