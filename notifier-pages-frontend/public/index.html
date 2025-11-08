@@ -407,6 +407,7 @@
 
           // 💥💥💥 Telegram WebApp API 초기화 및 initData 검증 로직 💥💥💥
           window.Telegram.WebApp.ready();
+          Telegram.WebApp.expand(); // 미니앱을 전체 화면으로 확장
           telegramInfoDiv.style.display = 'block';
           telegramInfoDiv.textContent = 'Telegram WebApp 정보 로딩 중... (서버 검증)';
 
@@ -440,8 +441,8 @@
                   headerElement.style.display = 'flex'; // 헤더, 메인, 푸터 표시
                   mainContentElement.style.display = 'block';
                   footerNavElement.style.display = 'flex';
-                  Telegram.WebApp.expand(); // 미니앱을 전체 화면으로 확장
-                  Telegram.WebApp.ready();
+             //     Telegram.WebApp.expand(); // 미니앱을 전체 화면으로 확장
+             //     Telegram.WebApp.ready();
                   renderSchedule(true); // 스케줄 렌더링
                   
               } else {
