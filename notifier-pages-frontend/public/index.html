@@ -375,10 +375,11 @@
         // ✅ 전역 상수 및 유틸리티
       const DAYS = ['일', '월', '화', '수', '목', '금', '토']; 
       let currentDate = new Date(); 
-      const WORKER_API_BASE = 'https://notifier-worker-backend.annae0sang3.workers.dev'; // 💥💥💥 케이오님 실제 Worker URL로 변경! 💥💥💥
+      const WORKER_API_BASE = 'https://notifier-worker-backend.annae0sang3.workers.dev'; // 💥💥💥실제 Worker URL💥💥💥
+
 
       // =========================================================================
-      // ✅ 텔레그램 WebApp 및 사용자 검증 로직 (URL 파라미터 기반으로 변경)
+      // ✅ 텔레그램 WebApp 및 사용자 검증 로직 (기존 URL 파라미터 기반에서 initData 기반으로 변경)
       // =========================================================================
       let currentUserId = null; // 💥 검증된 사용자 ID를 저장할 전역 변수
       let currentChatId = null; // 💥 현재 미니앱이 열린 채팅방 ID 저장할 전역 변수
@@ -389,97 +390,192 @@
           const footerNavElement = document.querySelector('.footer-nav');
           const telegramInfoDiv = document.getElementById('telegram-info');
           const accessDeniedDiv = document.getElementById('access-denied');
-          // const telegramInfoDeniedDiv = document.getElementById('telegram-info-denied'); // #access-denied 내부에 바로 메시지 표시할 것이므로 별도 div 필요 없음
-
+          
           // 초기 UI 숨기기
           headerElement.style.display = 'none';
           mainContentElement.style.display = 'none';
           footerNavElement.style.display = 'none';
-          telegramInfoDiv.style.display = 'none'; // 초기 정보창도 숨김
+          telegramInfoDiv.style.display = 'none';
 
           // 텔레그램 WebApp 스크립트 로드 여부 및 존재 여부 확인
           if (typeof Telegram === 'undefined' || !window.Telegram.WebApp) {
               console.log('❌ 텔레그램 미니앱 환경이 아닙니다. 일반 웹페이지로 열렸습니다.');
               accessDeniedDiv.querySelector('p').textContent = '이 앱은 텔레그램 미니앱 환경에서만 동작합니다.';
-              accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
+              accessDeniedDiv.style.display = 'block';
               return;
           }
 
-          // 텔레그램 WebApp 준비 완료 알림
-          window.Telegram.WebApp.ready(); 
-          
-          // 💥💥💥 URL 쿼리 파라미터에서 user_id, chat_id, sig를 추출합니다! 💥💥💥
-          const urlParams = new URLSearchParams(window.location.search);
-          const userId = urlParams.get('user_id');
-          const chatId = urlParams.get('chat_id');
-          const signature = urlParams.get('sig'); // 보안 서명
+          // 💥💥💥 Telegram WebApp API 초기화 및 initData 검증 로직 💥💥💥
+          window.Telegram.WebApp.ready();
+          telegramInfoDiv.style.display = 'block';
+          telegramInfoDiv.textContent = 'Telegram WebApp 정보 로딩 중... (서버 검증)';
 
-          console.log(`DEBUG_PARAMS: userId=${userId}, chatId=${chatId}, signature=${signature}`);
-
-          console.log(`DEBUG_PAGES_FETCH_URL: ${WORKER_API_BASE}/verify_params`);
-
-          if (!userId || !chatId || !signature) {
-              console.error('❌ URL 파라미터에 user_id, chat_id 또는 sig가 누락되었습니다.');
-              accessDeniedDiv.querySelector('p').textContent = '에러: 필수 정보가 누락되어 인증할 수 없습니다.';
-              accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
+          const initData = window.Telegram.WebApp.initData;
+          if (!initData) {
+              console.error('❌ initData를 찾을 수 없습니다. 텔레그램 미니앱 환경이 아니거나 비정상 접근입니다.');
+              accessDeniedDiv.querySelector('p').textContent = '보안 정보가 부족하여 미니앱을 실행할 수 없습니다.';
+              accessDeniedDiv.style.display = 'block';
+              telegramInfoDiv.style.display = 'none';
               return;
           }
-
-          console.log(`URL Params from Frontend: userId=${userId}, chatId=${chatId}, signature=${signature}`);
 
           try {
-              // 💥💥💥 Pages에서 Workers로 전송할 JSON 바디를 미리 찍어봅니다. 💥💥💥
-              const bodyToSend = JSON.stringify({ userId, chatId, signature });
-              console.log("DEBUG_PAGES_BODY_TO_SEND:", bodyToSend); 
-              console.log("DEBUG_PAGES_FETCH_URL:", `${WORKER_API_BASE}/verify_params`);
-            
-              // 백엔드 Workers의 '/verify_params' 엔드포인트로 추출한 정보를 전송하여 사용자 검증
-              const response = await fetch(`${WORKER_API_BASE}/verify_params`, { 
+              // initData를 백엔드의 /verify_init_data 엔드포인트로 POST 요청 보냄
+              const verifyResponse = await fetch(`${WORKER_API_BASE}/verify_init_data`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId, chatId, signature }), 
+                  body: JSON.stringify({ initData: initData }), // initData 문자열 전체를 보냄
               });
 
-              const verificationResult = await response.json();
+              const verificationResult = await verifyResponse.json();
+              console.log("DEBUG_INIT_DATA_VERIFICATION_RESULT:", verificationResult);
 
               if (verificationResult.ok) {
-                  // ✅ 검증 성공 시
-                  const user = verificationResult.user || {};
-                  
-                  currentUserId = userId; // 💥 전역 변수에 저장
-                  currentChatId = chatId; // 💥 전역 변수에 저장
+                  // 검증 성공! 사용자 및 채팅 정보 저장
+                  currentUserId = verificationResult.user ? verificationResult.user.id : null;
+                  currentChatId = verificationResult.chat ? verificationResult.chat.id : null;
+                  console.log(`✅ 사용자 인증 성공! User ID: ${currentUserId}, Chat ID: ${currentChatId}`);
 
-                  // telegramInfoDiv.innerHTML = `
-                  //     <p><strong>사용자 이름:</strong> ${user.first_name || `User ${user.id}`} (ID: ${user.id})</p>
-                  //     <p><strong>그룹 ID:</strong> ${verificationResult.chat_id}</p>
-                  //     <p style="color: #28a745; font-weight: 600;">✓ 인증 완료</p>
-                  // `;
-                  // telegramInfoDiv.style.display = 'block'; 
-                  console.log(`✓ 인증 완료! 사용자 ID: ${userId}, 그룹 ID: ${chatId}`);  
-                
-                  accessDeniedDiv.style.display = 'none'; // 접근 거부 메시지는 숨김 (혹시 초기 display:block 설정되어 있을 경우 대비)
-
-                  // ✅ 검증 통과 후 미니앱의 주요 UI 요소들을 보이게 함
-                  headerElement.style.display = 'block';
+                  telegramInfoDiv.style.display = 'none'; // 정보창 숨김
+                  headerElement.style.display = 'flex'; // 헤더, 메인, 푸터 표시
                   mainContentElement.style.display = 'block';
-                  footerNavElement.style.display = 'flex'; // footer-nav는 flex로 설정되어 있으므로
+                  footerNavElement.style.display = 'flex';
+                  Telegram.WebApp.expand(); // 미니앱을 전체 화면으로 확장
+                  Telegram.WebApp.ready();
+                  renderSchedule(true); // 스케줄 렌더링
                   
-                  goToToday(); // 오늘 날짜 스케줄 로드 시작
               } else {
-                  // ❌ 검증 실패 시
-                  console.error('❌ 사용자 검증 실패:', verificationResult.reason);
-                  accessDeniedDiv.querySelector('p').textContent = `🚨 인증 실패: ${verificationResult.reason}`;
-                  accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
-                  // 텔레그램 Web App 닫기 (선택 사항)
-                  // window.Telegram.WebApp.close(); 
+                  // 검증 실패! 접근 거부 메시지 표시
+                  console.error('❌ 사용자 인증 실패:', verificationResult.reason);
+                  accessDeniedDiv.querySelector('p').textContent = `미니앱 접근 실패: ${verificationResult.reason}`;
+                  accessDeniedDiv.style.display = 'block';
+                  telegramInfoDiv.style.display = 'none';
               }
           } catch (error) {
-              console.error('❌ 사용자 검증 중 통신 오류:', error);
-              accessDeniedDiv.querySelector('p').textContent = `🚨 인증 중 네트워크 오류: ${error.message}`;
+              console.error('❌ initData 서버 검증 중 오류 발생:', error);
+              accessDeniedDiv.querySelector('p').textContent = `서버 통신 오류로 미니앱을 실행할 수 없습니다. (${error.message})`;
               accessDeniedDiv.style.display = 'block';
-              // window.Telegram.WebApp.close();
+              telegramInfoDiv.style.display = 'none';
           }
       });
+
+ 
+
+
+
+
+      
+      // // =========================================================================
+      // // ✅ 텔레그램 WebApp 및 사용자 검증 로직 (URL 파라미터 기반으로 변경)
+      // // =========================================================================
+      // let currentUserId = null; // 💥 검증된 사용자 ID를 저장할 전역 변수
+      // let currentChatId = null; // 💥 현재 미니앱이 열린 채팅방 ID 저장할 전역 변수
+
+      // document.addEventListener('DOMContentLoaded', async () => {
+      //     const headerElement = document.querySelector('.header');
+      //     const mainContentElement = document.getElementById('main-content');
+      //     const footerNavElement = document.querySelector('.footer-nav');
+      //     const telegramInfoDiv = document.getElementById('telegram-info');
+      //     const accessDeniedDiv = document.getElementById('access-denied');
+      //     // const telegramInfoDeniedDiv = document.getElementById('telegram-info-denied'); // #access-denied 내부에 바로 메시지 표시할 것이므로 별도 div 필요 없음
+
+      //     // 초기 UI 숨기기
+      //     headerElement.style.display = 'none';
+      //     mainContentElement.style.display = 'none';
+      //     footerNavElement.style.display = 'none';
+      //     telegramInfoDiv.style.display = 'none'; // 초기 정보창도 숨김
+
+      //     // 텔레그램 WebApp 스크립트 로드 여부 및 존재 여부 확인
+      //     if (typeof Telegram === 'undefined' || !window.Telegram.WebApp) {
+      //         console.log('❌ 텔레그램 미니앱 환경이 아닙니다. 일반 웹페이지로 열렸습니다.');
+      //         accessDeniedDiv.querySelector('p').textContent = '이 앱은 텔레그램 미니앱 환경에서만 동작합니다.';
+      //         accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
+      //         return;
+      //     }
+
+      //     // 텔레그램 WebApp 준비 완료 알림
+      //     window.Telegram.WebApp.ready(); 
+          
+      //     // 💥💥💥 URL 쿼리 파라미터에서 user_id, chat_id, sig를 추출합니다! 💥💥💥
+      //     const urlParams = new URLSearchParams(window.location.search);
+      //     const userId = urlParams.get('user_id');
+      //     const chatId = urlParams.get('chat_id');
+      //     const signature = urlParams.get('sig'); // 보안 서명
+
+      //     console.log(`DEBUG_PARAMS: userId=${userId}, chatId=${chatId}, signature=${signature}`);
+
+      //     console.log(`DEBUG_PAGES_FETCH_URL: ${WORKER_API_BASE}/verify_params`);
+
+      //     if (!userId || !chatId || !signature) {
+      //         console.error('❌ URL 파라미터에 user_id, chat_id 또는 sig가 누락되었습니다.');
+      //         accessDeniedDiv.querySelector('p').textContent = '에러: 필수 정보가 누락되어 인증할 수 없습니다.';
+      //         accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
+      //         return;
+      //     }
+
+      //     console.log(`URL Params from Frontend: userId=${userId}, chatId=${chatId}, signature=${signature}`);
+
+      //     try {
+      //         // 💥💥💥 Pages에서 Workers로 전송할 JSON 바디를 미리 찍어봅니다. 💥💥💥
+      //         const bodyToSend = JSON.stringify({ userId, chatId, signature });
+      //         console.log("DEBUG_PAGES_BODY_TO_SEND:", bodyToSend); 
+      //         console.log("DEBUG_PAGES_FETCH_URL:", `${WORKER_API_BASE}/verify_params`);
+            
+      //         // 백엔드 Workers의 '/verify_params' 엔드포인트로 추출한 정보를 전송하여 사용자 검증
+      //         const response = await fetch(`${WORKER_API_BASE}/verify_params`, { 
+      //             method: 'POST',
+      //             headers: { 'Content-Type': 'application/json' },
+      //             body: JSON.stringify({ userId, chatId, signature }), 
+      //         });
+
+      //         const verificationResult = await response.json();
+
+      //         if (verificationResult.ok) {
+      //             // ✅ 검증 성공 시
+      //             const user = verificationResult.user || {};
+                  
+      //             currentUserId = userId; // 💥 전역 변수에 저장
+      //             currentChatId = chatId; // 💥 전역 변수에 저장
+
+      //             // telegramInfoDiv.innerHTML = `
+      //             //     <p><strong>사용자 이름:</strong> ${user.first_name || `User ${user.id}`} (ID: ${user.id})</p>
+      //             //     <p><strong>그룹 ID:</strong> ${verificationResult.chat_id}</p>
+      //             //     <p style="color: #28a745; font-weight: 600;">✓ 인증 완료</p>
+      //             // `;
+      //             // telegramInfoDiv.style.display = 'block'; 
+      //             console.log(`✓ 인증 완료! 사용자 ID: ${userId}, 그룹 ID: ${chatId}`);  
+                
+      //             accessDeniedDiv.style.display = 'none'; // 접근 거부 메시지는 숨김 (혹시 초기 display:block 설정되어 있을 경우 대비)
+
+      //             // ✅ 검증 통과 후 미니앱의 주요 UI 요소들을 보이게 함
+      //             headerElement.style.display = 'block';
+      //             mainContentElement.style.display = 'block';
+      //             footerNavElement.style.display = 'flex'; // footer-nav는 flex로 설정되어 있으므로
+                  
+      //             goToToday(); // 오늘 날짜 스케줄 로드 시작
+      //         } else {
+      //             // ❌ 검증 실패 시
+      //             console.error('❌ 사용자 검증 실패:', verificationResult.reason);
+      //             accessDeniedDiv.querySelector('p').textContent = `🚨 인증 실패: ${verificationResult.reason}`;
+      //             accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
+      //             // 텔레그램 Web App 닫기 (선택 사항)
+      //             // window.Telegram.WebApp.close(); 
+      //         }
+      //     } catch (error) {
+      //         console.error('❌ 사용자 검증 중 통신 오류:', error);
+      //         accessDeniedDiv.querySelector('p').textContent = `🚨 인증 중 네트워크 오류: ${error.message}`;
+      //         accessDeniedDiv.style.display = 'block';
+      //         // window.Telegram.WebApp.close();
+      //     }
+      // });
+
+
+
+
+
+
+
+      
 
       // =========================================================================
       // ✅ 기존 스케줄 관련 함수들 (currentUserId를 사용하도록 수정)
