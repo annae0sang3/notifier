@@ -385,6 +385,22 @@
       let currentChatId = null; // 💥 현재 미니앱이 열린 채팅방 ID 저장할 전역 변수
 
       document.addEventListener('DOMContentLoaded', async () => {
+                // 💥💥💥 이 아래 디버깅 코드 추가 💥💥💥
+        console.log("DOM content loaded.");
+        console.log("Current URL:", window.location.href);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlInitData = urlParams.get('tgWebAppInitData');
+        console.log("URL parameter 'tgWebAppInitData':", urlInitData);
+
+        if (window.Telegram && window.Telegram.WebApp) {
+            console.log("Telegram.WebApp is available.");
+            console.log("Telegram.WebApp.initData:", window.Telegram.WebApp.initData);
+        } else {
+            console.log("Telegram.WebApp is NOT available.");
+        }
+        // 💥💥💥 여기까지 디버깅 코드 추가 💥💥💥
+        
           const headerElement = document.querySelector('.header');
           const mainContentElement = document.getElementById('main-content');
           const footerNavElement = document.querySelector('.footer-nav');
