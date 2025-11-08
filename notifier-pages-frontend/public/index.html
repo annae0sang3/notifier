@@ -762,7 +762,7 @@
 
       
       let toastTimeoutId = null; // 타이머 ID를 저장할 전역 변수      
-      function showToast(message, duration = 3000) {
+      function showToast(message, duration = 1000) {
           let toast = document.getElementById('toast');
           if (!toast) {
               toast = document.createElement('div');
