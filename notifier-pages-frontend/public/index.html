@@ -276,11 +276,10 @@
         border-radius: 25px;
         z-index: 1000;
         
-        /* 💥💥💥 변경: 초기 opacity는 0으로, visibility는 hidden으로 합니다.
-                   나타날 때만 visible로 바꾸고 opacity를 1로 변경하면 됩니다. 💥💥💥 */
+        /* 💥💥💥 이 상태로 유지! 💥💥💥 */
         opacity: 0;
         visibility: hidden; 
-        transition: opacity 0.3s ease-in-out; /* 💥 visibility 트랜지션은 제거 */
+        transition: opacity 0.3s ease-in-out; 
         
         font-size: 1.0em;
         white-space: nowrap;
@@ -761,74 +760,64 @@
         }
       }
 
+      
+      let toastTimeoutId = null; // 타이머 ID를 저장할 전역 변수      
       function showToast(message, duration = 3000) {
-        let toast = document.getElementById('toast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'toast';
-            // toast.style.cssText = `
-            //     position: fixed;
-            //     bottom: 20px; left: 50%;
-            //     transform: translateX(-50%);
-            //     background-color: rgba(0,0,0,0.7);
-            //     color: white;
-            //     padding: 10px 20px;
-            //     border-radius: 5px;
-            //     z-index: 1000;
-            //     opacity: 0;
-            //     transition: opacity 0.3s ease-in-out;
-            //     font-size: 0.9em;
-            // `;
-            document.body.appendChild(toast);
-        }
-        
-        // 💥💥💥 기존 타이머가 있다면 클리어 (메시지가 바로 사라지는 문제 해결) 💥💥💥
-        toast.textContent = message;
-        toast.style.visibility = 'visible'; 
-        toast.style.opacity = '1'; // 바로 불투명하게 만듭니다.
-    
-        // 💥💥💥 기존 타이머가 있다면 클리어 💥💥💥
-        if (toastTimeoutId) {
-            clearTimeout(toastTimeoutId);
-        }
-    
-        // 💥💥💥 이제 delay를 주고 opacity를 0으로 만듭니다. 💥💥💥
-        toastTimeoutId = setTimeout(() => {
-            toast.style.opacity = '0'; // 투명하게 만듭니다.
-            // opacity 트랜지션이 끝난 후에 visibility를 hidden으로 변경하여
-            // 요소가 화면에서 완전히 사라지고 클릭 이벤트 등에 영향을 주지 않도록 합니다.
-            // opacity 트랜지션 시간(0.3s)보다 약간 길게 잡아줍니다.
-            setTimeout(() => {
-                if (toast.style.opacity === '0') { // opacity가 0일 때만 hidden으로 전환
-                    toast.style.visibility = 'hidden';
-                }
-                toastTimeoutId = null; // 타이머 ID 초기화
-            }, 350); // CSS의 transition 시간(0.3s)보다 길게 설정 (예: 0.35s = 350ms)
-        }, duration); // duration 후에 사라지기 시작
+          let toast = document.getElementById('toast');
+          if (!toast) {
+              toast = document.createElement('div');
+              toast.id = 'toast';
+              document.body.appendChild(toast);
+          }
+      
+          // 💥💥💥 기존 타이머가 있다면 클리어 (토스트가 사라지지 않는 문제 해결 핵심!) 💥💥💥
+          if (toastTimeoutId) {
+              clearTimeout(toastTimeoutId);
+              toastTimeoutId = null;
+          }
+      
+          // 메시지 업데이트 및 보이도록 설정
+          toast.textContent = message;
+          toast.style.visibility = 'visible'; // 즉시 보이도록
+          toast.style.opacity = '1';          // 불투명하게 (CSS 트랜지션 시작)
+      
+          // 지정된 시간(duration) 후 토스트를 사라지게 하는 타이머 설정
+          toastTimeoutId = setTimeout(() => {
+              toast.style.opacity = '0'; // 투명하게 만듭니다 (CSS 트랜지션 시작)
+              // opacity 트랜지션이 완료될 시간을 기다린 후 요소를 완전히 숨깁니다.
+              // CSS transition의 duration과 동일하게 맞춥니다. (0.3s = 300ms)
+              setTimeout(() => {
+                  // 이 시점에 opacity가 0이 아니면 다른 토스트가 시작됐을 수 있으므로 확인
+                  if (toast.style.opacity === '0') { 
+                      toast.style.visibility = 'hidden'; // 완전히 숨김
+                  }
+                  toastTimeoutId = null; // 타이머 ID 초기화
+              }, 300); // CSS transition-duration 값과 동일하게 설정
+          }, duration); // duration 후에 사라지기 시작 (3초 후)
       }
 
       
-    // 💥💥💥 스와이프 💥💥💥
-    
-    let touchStartX = 0;
-    const SWIPE_THRESHOLD = 80; // 스와이프로 인식할 최소 이동 거리 (픽셀)
-
-    const scheduleContainer = document.querySelector('.container');
-
-    scheduleContainer.addEventListener('touchstart', (e) => {
-        touchStartX = e.touches[0].clientX; // 터치 시작 지점의 X 좌표 저장
-    });
-
-    scheduleContainer.addEventListener('touchend', (e) => {
-        const touchEndX = e.changedTouches[0].clientX; // 터치 끝 지점의 X 좌표
-        const deltaX = touchEndX - touchStartX; // X축 이동 거리 계산
-
-        if (deltaX > SWIPE_THRESHOLD) {
-            prevMonth(); // 오른쪽으로 스와이프 (이전 달로 이동)
-        } else if (deltaX < -SWIPE_THRESHOLD) {
-            nextMonth(); // 왼쪽으로 스와이프 (다음 달로 이동)
-        처럼 }
-    });
-    // 💥💥💥 스와이프 끝 💥💥💥
+      // 💥💥💥 스와이프 💥💥💥
+      
+      let touchStartX = 0;
+      const SWIPE_THRESHOLD = 80; // 스와이프로 인식할 최소 이동 거리 (픽셀)
+  
+      const scheduleContainer = document.querySelector('.container');
+  
+      scheduleContainer.addEventListener('touchstart', (e) => {
+          touchStartX = e.touches[0].clientX; // 터치 시작 지점의 X 좌표 저장
+      });
+  
+      scheduleContainer.addEventListener('touchend', (e) => {
+          const touchEndX = e.changedTouches[0].clientX; // 터치 끝 지점의 X 좌표
+          const deltaX = touchEndX - touchStartX; // X축 이동 거리 계산
+  
+          if (deltaX > SWIPE_THRESHOLD) {
+              prevMonth(); // 오른쪽으로 스와이프 (이전 달로 이동)
+          } else if (deltaX < -SWIPE_THRESHOLD) {
+              nextMonth(); // 왼쪽으로 스와이프 (다음 달로 이동)
+          처럼 }
+      });
+      // 💥💥💥 스와이프 끝 💥💥💥
       
     </script>
