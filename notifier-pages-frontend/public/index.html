@@ -264,6 +264,26 @@
       font-weight:600;
     }
 
+        #toast {
+        position: fixed;
+        /* 💥💥💥 가운데 정렬을 위한 변경 💥💥💥 */
+        top: 50%; /* 상단에서 50% 지점 */
+        left: 50%; /* 왼쪽에서 50% 지점 */
+        transform: translate(-50%, -50%); /* 정확히 중앙에 오도록 자신의 너비/높이의 절반만큼 이동 */
+        
+        /* 💥💥💥 배경색 반투명, 둥근 모서리, 글자색 변경 💥💥💥 */
+        background-color: rgba(0, 0, 0, 0.75); /* 검정색에 75% 불투명도 */
+        color: white;
+        padding: 12px 24px; /* 패딩 좀 더 넓게 */
+        border-radius: 25px; /* 더 둥근 모서리 */
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out, visibility 0.3s; /* visibility도 transition 대상에 추가 */
+        font-size: 1.0em; /* 글자 크기 살짝 키움 */
+        white-space: nowrap; /* 내용이 한 줄로 표시되도록 */
+        visibility: hidden; /* 💥 초기에는 완전히 숨김 (공간도 차지하지 않음) */
+    }
+
 
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -759,11 +779,21 @@
             `;
             document.body.appendChild(toast);
         }
+        
+        // 💥💥💥 기존 타이머가 있다면 클리어 (메시지가 바로 사라지는 문제 해결) 💥💥💥
+        if (toastTimeoutId) {
+            clearTimeout(toastTimeoutId);
+            toastTimeoutId = null;
+        }
+    
         toast.textContent = message;
         toast.style.opacity = '1';
-
-        setTimeout(() => {
+        toast.style.visibility = 'visible'; // 💥 visibility도 'visible'로 설정
+    
+        toastTimeoutId = setTimeout(() => {
             toast.style.opacity = '0';
+            toast.style.visibility = 'hidden'; // 💥 완전히 사라진 후에는 visibility도 hidden으로
+            toastTimeoutId = null; // 타이머 ID 초기화
         }, duration);
       }
 
