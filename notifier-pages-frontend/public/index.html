@@ -534,7 +534,7 @@
         if (dutyData && dutyData.type) {
             if (dutyData.type === '주') {
                 dutyIconHtml = `<span class="material-icons duty-icon day-icon">wb_sunny</span>`;
-            } else if (dutyData.type === '야1') { // 야간 타입 (야간1/2 아이콘은 대표로 야간1에서 사용)
+            } else if (dutyData.type === '야') {
                 dutyIconHtml = `<span class="material-icons duty-icon night-icon">nights_stay</span>`;
             }
         }
@@ -574,7 +574,7 @@
         } else {
             cardHtml += `
                 <div class="card-duties" style="text-align: center;">
-                    <span style="color: #aaa;">${dutyData && dutyData.type === '비' ? '-' : '스케줄 없음'}</span>
+                    <span style="color: #aaa;">${dutyData && dutyData.type === '비' ? '💤' : '스케줄 없음'}</span>
                 </div>
             `;
         }
