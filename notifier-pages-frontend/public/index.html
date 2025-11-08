@@ -574,7 +574,7 @@
         } else {
             cardHtml += `
                 <div class="card-duties" style="text-align: center;">
-                    <span style="color: #aaa;">${dutyData && dutyData.type === '비' ? '💤' : '스케줄 없음'}</span>
+                    <span style="color: #aaa;">${dutyData && dutyData.type === '비' ? ' ' : '스케줄 없음'}</span>
                 </div>
             `;
         }
@@ -764,4 +764,29 @@
             toast.style.opacity = '0';
         }, duration);
       }
+
+      
+    // 💥💥💥 스와이프 💥💥💥
+    
+    let touchStartX = 0;
+    const SWIPE_THRESHOLD = 80; // 스와이프로 인식할 최소 이동 거리 (픽셀)
+
+    const scheduleContainer = document.querySelector('.container');
+
+    scheduleContainer.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX; // 터치 시작 지점의 X 좌표 저장
+    });
+
+    scheduleContainer.addEventListener('touchend', (e) => {
+        const touchEndX = e.changedTouches[0].clientX; // 터치 끝 지점의 X 좌표
+        const deltaX = touchEndX - touchStartX; // X축 이동 거리 계산
+
+        if (deltaX > SWIPE_THRESHOLD) {
+            prevMonth(); // 오른쪽으로 스와이프 (이전 달로 이동)
+        } else if (deltaX < -SWIPE_THRESHOLD) {
+            nextMonth(); // 왼쪽으로 스와이프 (다음 달로 이동)
+        처럼 }
+    });
+    // 💥💥💥 스와이프 끝 💥💥💥
+      
     </script>
