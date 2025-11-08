@@ -279,7 +279,7 @@
         /* 💥💥💥 이 상태로 유지! 💥💥💥 */
         opacity: 0;
         visibility: hidden; 
-        transition: opacity 0.3s ease-in-out; 
+        transition: opacity 1.0s ease-in-out; 
         
         font-size: 1.0em;
         white-space: nowrap;
@@ -792,7 +792,7 @@
                       toast.style.visibility = 'hidden'; // 완전히 숨김
                   }
                   toastTimeoutId = null; // 타이머 ID 초기화
-              }, 300); // CSS transition-duration 값과 동일하게 설정
+              }, 1000); // CSS transition-duration 값과 동일하게 설정
           }, duration); // duration 후에 사라지기 시작 (3초 후)
       }
 
