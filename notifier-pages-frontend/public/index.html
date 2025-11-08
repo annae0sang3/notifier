@@ -264,24 +264,26 @@
       font-weight:600;
     }
 
-        #toast {
+    #toast {
         position: fixed;
-        /* 💥💥💥 가운데 정렬을 위한 변경 💥💥💥 */
-        top: 50%; /* 상단에서 50% 지점 */
-        left: 50%; /* 왼쪽에서 50% 지점 */
-        transform: translate(-50%, -50%); /* 정확히 중앙에 오도록 자신의 너비/높이의 절반만큼 이동 */
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         
-        /* 💥💥💥 배경색 반투명, 둥근 모서리, 글자색 변경 💥💥💥 */
-        background-color: rgba(0, 0, 0, 0.75); /* 검정색에 75% 불투명도 */
+        background-color: rgba(0, 0, 0, 0.75);
         color: white;
-        padding: 12px 24px; /* 패딩 좀 더 넓게 */
-        border-radius: 25px; /* 더 둥근 모서리 */
+        padding: 12px 24px;
+        border-radius: 25px;
         z-index: 1000;
+        
+        /* 💥💥💥 변경: 초기 opacity는 0으로, visibility는 hidden으로 합니다.
+                   나타날 때만 visible로 바꾸고 opacity를 1로 변경하면 됩니다. 💥💥💥 */
         opacity: 0;
-        transition: opacity 0.3s ease-in-out, visibility 0.3s; /* visibility도 transition 대상에 추가 */
-        font-size: 1.0em; /* 글자 크기 살짝 키움 */
-        white-space: nowrap; /* 내용이 한 줄로 표시되도록 */
-        visibility: hidden; /* 💥 초기에는 완전히 숨김 (공간도 차지하지 않음) */
+        visibility: hidden; 
+        transition: opacity 0.3s ease-in-out; /* 💥 visibility 트랜지션은 제거 */
+        
+        font-size: 1.0em;
+        white-space: nowrap;
     }
 
 
@@ -781,20 +783,28 @@
         }
         
         // 💥💥💥 기존 타이머가 있다면 클리어 (메시지가 바로 사라지는 문제 해결) 💥💥💥
+        toast.textContent = message;
+        toast.style.visibility = 'visible'; 
+        toast.style.opacity = '1'; // 바로 불투명하게 만듭니다.
+    
+        // 💥💥💥 기존 타이머가 있다면 클리어 💥💥💥
         if (toastTimeoutId) {
             clearTimeout(toastTimeoutId);
-            toastTimeoutId = null;
         }
     
-        toast.textContent = message;
-        toast.style.opacity = '1';
-        toast.style.visibility = 'visible'; // 💥 visibility도 'visible'로 설정
-    
+        // 💥💥💥 이제 delay를 주고 opacity를 0으로 만듭니다. 💥💥💥
         toastTimeoutId = setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.visibility = 'hidden'; // 💥 완전히 사라진 후에는 visibility도 hidden으로
-            toastTimeoutId = null; // 타이머 ID 초기화
-        }, duration);
+            toast.style.opacity = '0'; // 투명하게 만듭니다.
+            // opacity 트랜지션이 끝난 후에 visibility를 hidden으로 변경하여
+            // 요소가 화면에서 완전히 사라지고 클릭 이벤트 등에 영향을 주지 않도록 합니다.
+            // opacity 트랜지션 시간(0.3s)보다 약간 길게 잡아줍니다.
+            setTimeout(() => {
+                if (toast.style.opacity === '0') { // opacity가 0일 때만 hidden으로 전환
+                    toast.style.visibility = 'hidden';
+                }
+                toastTimeoutId = null; // 타이머 ID 초기화
+            }, 350); // CSS의 transition 시간(0.3s)보다 길게 설정 (예: 0.35s = 350ms)
+        }, duration); // duration 후에 사라지기 시작
       }
 
       
