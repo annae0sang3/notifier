@@ -415,7 +415,11 @@
           const signature = urlParams.get('sig'); // 보안 서명
 
           console.log(`DEBUG_PARAMS: userId=${userId}, chatId=${chatId}, signature=${signature}`);
-
+        
+          const tg = window.Telegram.WebApp;
+          console.log("initData:", tg.initData);
+          console.log("initDataUnsafe:", tg.initDataUnsafe);
+        
           console.log(`DEBUG_PAGES_FETCH_URL: ${WORKER_API_BASE}/verify_params`);
 
           if (!userId || !chatId || !signature) {
