@@ -384,6 +384,103 @@
       let currentChatId = null; // 💥 현재 미니앱이 열린 채팅방 ID 저장할 전역 변수
 
       document.addEventListener('DOMContentLoaded', async () => {
+                
+          if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand(); // 미니앱을 전체 화면으로 확장
+          }
+        
+          const urlParams = new URLSearchParams(window.location.search);
+          const token = urlParams.get('token'); // URL에서 'token' 파라미터 값 추출
+        
+          let currentUserId = null;
+          let currentChatId = null;
+        
+          // URL에 토큰이 있는지 확인
+          if (token) {
+            // 🔑 토큰으로 백엔드에서 userId, chatId 검증 및 가져오기
+            try {
+              // ** 중요: 'https://your-cloudflare-worker-domain' 부분을 케이오님의 실제 워커 도메인으로 변경해야 합니다! **
+              const verifyTokenUrl = `${WORKER_API_BASE}`; 
+              
+              // 백엔드 API 호출: URL 파라미터로 토큰 전달
+              const response = await fetch(`${verifyTokenUrl}?token=${token}`);
+              const data = await response.json();
+        
+              if (data.ok) {
+                currentUserId = data.userId;
+                currentChatId = data.chatId;
+                console.log('Token verified:', { userId: currentUserId, chatId: currentChatId });
+        
+                // ✅ 검증이 완료된 userId와 chatId를 활용하여 미니앱의 주요 로직 실행
+                // --------------------------------------------------------------------------
+                // **이 부분에 케이오님의 기존 미니앱 핵심 로직을 배치하면 됩니다.**
+                // 기존에 스케줄 데이터를 로드하거나 UI를 업데이트하는 함수들을
+                // currentUserId와 currentChatId 값을 인자로 받아 호출하도록 변경할 수 있습니다.
+                // 예를 들어, 기존 스케줄 로딩 함수가 `loadSchedule(userId, chatId)` 였다면,
+                // 여기서 `loadSchedule(currentUserId, currentChatId)` 처럼 호출하는 거죠.
+        
+                document.getElementById('app-content').innerText = `스케줄 로드 준비 완료! \n사용자: ${currentUserId}\n채팅방: ${currentChatId}`;
+        
+                // 예시: 스케줄 데이터를 가져오는 API 호출
+                // (실제 코드에서는 currentUserId와 currentChatId를 URL 파라미터나 요청 헤더에 포함시켜 백엔드로 보낼 수 있습니다.)
+                const scheduleApiUrl = `${WORKER_API_BASE}/api/schedule`; // 스케줄 API 워커 도메인도 변경
+                const startDate = '2025-11-01'; // 예시 날짜
+                const endDate = '2025-11-30';   // 예시 날짜
+                
+                const scheduleResponse = await fetch(`${scheduleApiUrl}?start=${startDate}&end=${endDate}`, {
+                    method: 'GET',
+                    headers: {
+                        // 백엔드 Worker의 handleSchedule 함수에서 X-User-Id, X-Chat-Id를 필요로 한다면
+                        // 이 헤더들을 추가해서 보낼 수 있습니다.
+                        // (현재 handleSchedule은 이 헤더들을 직접 사용하지 않지만, 검증이나 로깅용으로 유용할 수 있어요.)
+                        'X-User-Id': currentUserId, 
+                        'X-Chat-Id': currentChatId,
+                        'Content-Type': 'application/json',
+                        // 'Access-Control-Allow-Origin': '*' // 프론트엔드에서는 보통 자동으로 추가되거나 백엔드에서 허용함
+                    }
+                });
+                const scheduleData = await scheduleResponse.json();
+                console.log('Schedule data loaded:', scheduleData);
+                // 여기에 스케줄 데이터를 UI에 표시하는 케이오님의 실제 로직을 추가합니다.
+                document.getElementById('app-content').innerText += `\n\n첫 번째 스케줄: ${scheduleData[0]?.date} - ${scheduleData[0]?.day || scheduleData[0]?.night1}`;
+        
+        
+                // --------------------------------------------------------------------------
+        
+              } else {
+                // 토큰 검증 실패 시
+                document.getElementById('app-content').innerText = `오류: ${data.reason || '토큰 검증 실패'}`;
+                console.error('Token verification failed:', data.reason);
+                if (window.Telegram && window.Telegram.WebApp) {
+                  window.Telegram.WebApp.showAlert(`토큰 검증 실패: ${data.reason || '알 수 없는 오류'}`);
+                  // window.Telegram.WebApp.close(); // 치명적인 오류 시 미니앱 닫기 (사용자 경험 고려)
+                }
+              }
+            } catch (error) {
+              // 네트워크 요청 실패 등 예외 발생 시
+              document.getElementById('app-content').innerText = '미니앱 로딩 중 네트워크 오류가 발생했습니다.';
+              console.error('Failed to fetch token verification:', error);
+              if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.showAlert('미니앱 로딩 중 네트워크 오류가 발생했습니다.');
+                // window.Telegram.WebApp.close();
+              }
+            }
+          } else {
+            // URL에 토큰 파라미터가 없을 경우
+            document.getElementById('app-content').innerText = '미니앱을 실행하려면 텔레그램 봇을 통해 접근해주세요.';
+            console.warn('No token found in URL. Access denied.');
+            if (window.Telegram && window.Telegram.WebApp) {
+              window.Telegram.WebApp.showAlert('잘못된 접근입니다. 텔레그램 봇을 통해 다시 시도해주세요.');
+              // window.Telegram.WebApp.close();
+            }
+          }
+
+
+
+
+
+        
           const headerElement = document.querySelector('.header');
           const mainContentElement = document.getElementById('main-content');
           const footerNavElement = document.querySelector('.footer-nav');
