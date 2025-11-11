@@ -1,960 +1,1008 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>On-Call Schedule</title>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <!-- <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"> -->
-  <style>
-    body {
-      font-family: 'Inter', 'SF Pro Display', sans-serif;
-      margin: 0;
-      background-color: #f6f7f8;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      padding-bottom: 60px;
-      text-align: center;
-    }
+﻿// replykeyboard_backend.js (완전 통합본)
+// Cloudflare KV 바인딩 이름: SETTINGS_KV
+// GROUP_CHAT_ID  미니앱 접근 제어 대상 그룹 (이 그룹 멤버만 사용 가능)  ->  GROUP_CHAT_ID_TO_ENFORCE
+// CHAT_ID  봇이 주기적 메시지를 보낼 대상 그룹/채팅방  (스케줄러 동작 시 필수)  ->ELEGRAM_BOT_DEFAULT_CHAT_ID
 
-    #app-content {
-        background-color: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        padding: 30px;
-        margin: 20px auto; /* 중앙 정렬 */
-        max-width: 600px; /* 최대 너비 설정 */
-        min-height: 200px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center; /* 수직 중앙 정렬 */
-        align-items: center; /* 수평 중앙 정렬 */
-        font-size: 1.1em;
-        color: #555;
-        text-align: center;
-        line-height: 1.8;
-        word-break: keep-all; /* 단어가 잘리지 않게 함 */
-    }
-    .loading-spinner {
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #4CAF50;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        animation: spin 1s linear infinite;
-        margin-bottom: 15px;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    .container {
-      max-width: 450px;
-      width: 100%;
-      margin: 0 auto;
-      flex-grow: 1;
-    }
-    .header {
-      padding: 15px 16px 10px 16px;
-      position: sticky;
-      top: 0;
-      background-color: #f6f7f8;
-      z-index: 10;
-    }
-    .header h1 {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #101922;
-      margin: 0 0 15px;
-    }
-    .month-selector {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-    }
-    .month-selector .arrow {
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #6c757d;
-    }
-    .month-selector h2 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #101922;
-      margin: 0;
-    }
 
-    .schedule-list {
-      padding: 0 16px;
-      margin-bottom: 20px;
-    }
+// ===============================================
+// ✅ 전역 상수 및 유틸리티 함수
+// ===============================================
 
-    .schedule-card {
-      background-color: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-      margin-bottom: 8px;
-      padding: 8px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+
+// 🚨 Worker 인스턴스 재시작 시 사라지는 in-memory 폴백 설정
+// Cloudflare KV가 없거나 초기 설정이 필요할 때 사용됩니다.
+let _inMemorySettings = null;
+
+
+// 🧑‍🤝‍🧑 기본 사용자 목록: KV 설정이 없거나 유효하지 않을 때 적용
+const DEFAULT_USERS = ['1st', '2nd', '3rd', '4th'];
+
+
+// 📅 헬퍼: YYYY-MM-DD 형식의 문자열을 UTC Date 객체로 변환
+function parseDateYMD(s) {
+ const [y, m, d] = s.split('-').map(Number);
+ return new Date(Date.UTC(y, m - 1, d));
+}
+
+
+// 📝 헬퍼: UTC Date 객체를 YYYY-MM-DD 형식의 문자열로 변환
+function formatYMD(d) {
+ const yyyy = d.getUTCFullYear();
+ const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+ const dd = String(d.getUTCDate()).padStart(2, '0');
+ return `${yyyy}-${mm}-${dd}`;
+}
+
+
+// 🗓️ 헬퍼: 두 UTC Date 객체 간의 일수 차이 계산
+function daysBetweenUTC(a, b) {
+ const msPerDay = 24 * 60 * 60 * 1000;
+ return Math.floor((a.getTime() - b.getTime()) / msPerDay);
+}
+
+
+// 🔄 헬퍼: 배열 포인터를 길이 내에서 순환하도록 조정
+function wrapPointer(pointer, length) {
+ return ((pointer % length) + length) % length;
+}
+
+
+// ✅ UTC → KST 변환 헬퍼
+function convertUTCtoKST(utcDate) {
+ return new Date(utcDate.getTime() + 9 * 60 * 60 * 1000);
+}
+
+
+// ✅ 텔레그램 메시지 전송 헬퍼 (ReplyKeyboard / InlineKeyboard 지원)
+async function sendTelegramMessage(env, message, chatId, buttons = null) {
+ const url = `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`;
+ const headers = { 'Content-Type': 'application/json' };
+ const body = {
+   chat_id: chatId,
+   text: message,
+   parse_mode: 'Markdown',
+ };
+
+
+ if (buttons) {
+   body.reply_markup = { // 💥 buttons 배열을 { "inline_keyboard": buttons } 형태로 감싸서 보냄
+     inline_keyboard: buttons
+   };
+ }
+
+
+ try {
+   const response = await fetch(url, {
+     method: 'POST',
+     headers: headers,
+     body: JSON.stringify(body),
+   });
+
+
+   if (!response.ok) {
+     const errorData = await response.json().catch(() => ({}));
+     console.error('Failed to send Telegram message:', errorData);
+     throw new Error(`Telegram API error: ${JSON.stringify(errorData)}`);
+   }
+ } catch (e) {
+   console.error('Error sending Telegram message:', e);
+ }
+}
+
+
+// ✅ 텔레그램 콜백 쿼리 응답 헬퍼
+async function answerCallbackQuery(env, callbackQueryId, text, showAlert = false) {
+ const url = `https://api.telegram.org/bot${env.BOT_TOKEN}/answerCallbackQuery`;
+ const headers = { 'Content-Type': 'application/json' };
+ const body = {
+   callback_query_id: callbackQueryId,
+   text: text,
+   show_alert: showAlert
+ };
+ try {
+   const response = await fetch(url, {
+     method: 'POST',
+     headers: headers,
+     body: JSON.stringify(body),
+   });
+   if (!response.ok) {
+     const errorData = await response.json().catch(() => ({}));
+     console.error('Failed to answer callback query:', errorData);
+   }
+ } catch (e) {
+   console.error('Error answering callback query:', e);
+ }
+}
+
+
+// 💥💥💥 새로 추가되는 Helper 함수들 💥💥💥
+
+
+// Helper: 메시지 인라인 키보드 수정
+async function editMessageReplyMarkup(env, chatId, messageId, inlineKeyboard) {
+ const url = `https://api.telegram.org/bot${env.BOT_TOKEN}/editMessageReplyMarkup`;
+ const headers = { 'Content-Type': 'application/json' };
+ const body = {
+     chat_id: chatId,
+     message_id: messageId,
+     reply_markup: {
+         inline_keyboard: inlineKeyboard
+     }
+ };
+ try {
+     const response = await fetch(url, {
+         method: 'POST',
+         headers: headers,
+         body: JSON.stringify(body),
+     });
+     if (!response.ok) {
+         const errorData = await response.json();
+         console.error('Failed to edit message reply markup:', errorData);
+         throw new Error(`Telegram API error: ${JSON.stringify(errorData)}`);
+     }
+ } catch (e) {
+     console.error('Error editing message reply markup:', e);
+ }
+}
+
+
+// Helper: URL 파라미터 서명 생성 (user_id, chat_id 위변조 방지)
+async function generateSignature(userId, chatId, botToken) {
+ // 서명할 데이터는 userId와 chatId를 콜론으로 연결한 문자열
+ const dataToSign = `${userId}:${chatId}`;
+  // 봇 토큰으로 HMAC 시크릿 키 생성
+ const secretKey = await crypto.subtle.digest(
+     'SHA-256',
+     new TextEncoder().encode(botToken)
+ );
+ const key = await crypto.subtle.importKey(
+     'raw',
+     secretKey,
+     { name: 'HMAC', hash: 'SHA-256' },
+     false,
+     ['sign']
+ );
+  // 데이터 서명
+ const signatureBuffer = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(dataToSign));
+  // 서명 결과(ArrayBuffer)를 16진수 문자열로 변환
+ return Array.from(new Uint8Array(signatureBuffer))
+     .map((b) => b.toString(16).padStart(2, '0'))
+     .join('');
+}
+
+
+
+
+// 💥 SETTINGS_KV 사용하여 당직 정보 계산
+async function getDutyInfoFromSettingsKV(targetDate, env) {
+ let settings = null;
+ let dayDutyRoster = null;
+ let night2DutyRoster = null;
+
+
+ try {
+   const settingsJson = await env.SETTINGS_KV.get("settings");
+   if (settingsJson) {
+     settings = JSON.parse(settingsJson);
+   }
+   const dayDutyRosterJson = await env.SETTINGS_KV.get("dayDutyRoster");
+   if (dayDutyRosterJson) {
+     dayDutyRoster = JSON.parse(dayDutyRosterJson);
+   }
+   const night2DutyRosterJson = await env.SETTINGS_KV.get("night2DutyRoster");
+   if (night2DutyRosterJson) {
+     night2DutyRoster = JSON.parse(night2DutyRosterJson);
+   }
+ } catch (e) {
+   console.error("KV settings load error in getDutyInfoFromSettingsKV:", e);
+   return {
+     message: "설정 정보를 불러오는 데 실패했습니다. 관리자에게 문의하세요.",
+     dutyType: "에러"
+   };
+ }
+
+
+ // 🚨 설정이 유효하지 않을 때 강제 기본값 적용
+ if (!settings || typeof settings.cycle !== 'string' || settings.cycle.trim() === '' ||
+     !Array.isArray(settings.users) || settings.users.length === 0) {
+   console.warn("Using fallback settings for scheduled task due to missing or invalid KV data.");
+   settings = {
+     cycle: '주 주 야 야 비 비',
+     baseDate: formatYMD(convertUTCtoKST(new Date())),
+     users: DEFAULT_USERS
+   };
+ }
+
+
+ const cycleTokens = (settings.cycle || '').trim().split(/\s+/).filter(Boolean);
+ const baseDateStr = settings.baseDate;
+ const users = settings.users;
+
+
+ const numPeople = users.length;
+
+
+ // 👷‍♂️ dayDutyRoster가 유효하지 않으면 users를 기반으로 기본 로스터 생성 (임시)
+ if (!Array.isArray(dayDutyRoster) || dayDutyRoster.length === 0) {
+   if (numPeople % 2 === 0) {
+     const secondHalf = [];
+     for (let i = 0; i < numPeople; i += 2) {
+       secondHalf.push(users[i + 1], users[i]);
+     }
+     dayDutyRoster = [...users, ...secondHalf];
+   } else {
+     dayDutyRoster = Array.from({ length: numPeople * 2 }, (_, i) => users[i % numPeople]);
+   }
+   console.warn("Using fallback dayDutyRoster in getDutyInfoFromSettingsKV.");
+ }
+
+
+ // 🌙 night2DutyRoster가 유효하지 않으면 dayDutyRoster를 기반으로 생성 (임시)
+ if (!Array.isArray(night2DutyRoster) || night2DutyRoster.length === 0) {
+   if (Array.isArray(dayDutyRoster) && dayDutyRoster.length >= 2) {
+     night2DutyRoster = [...dayDutyRoster.slice(2), ...dayDutyRoster.slice(0, 2)];
+   } else {
+     night2DutyRoster = Array.from({ length: users.length * 2 }, (_, i) => users[(i + 2) % users.length]);
+   }
+   console.warn("Using fallback night2DutyRoster in getDutyInfoFromSettingsKV.");
+ }
+
+
+ const night1DutyRoster = [...dayDutyRoster]; // nightDuty1은 dayDutyRoster와 동일 개념
+
+
+ // 🗓️ 로직 계산 (기존 index2.js의 getDutyInfo 알고리즘 유지)
+ const baseDateUTC = new Date(baseDateStr);
+ const baseDate = convertUTCtoKST(baseDateUTC);
+ baseDate.setHours(0, 0, 0, 0);
+
+
+ const diffDays = Math.floor((targetDate.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
+ const dutyTypeRaw = cycleTokens[diffDays % cycleTokens.length];
+
+
+ let dayCount = 0;
+ let nightCount = 0;
+ for (let i = 0; i < diffDays; i++) {
+   const type = cycleTokens[i % cycleTokens.length];
+   if (type.includes('주')) dayCount++;
+   else if (type.includes('야')) nightCount++;
+ }
+
+
+ const weekday = new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(targetDate);
+ const formattedDate = `${targetDate.getFullYear().toString().slice(2)}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')} (${String(weekday)})`;
+
+
+ let dutyMessage = "";
+ let dutyType = "";
+
+
+ if (dutyTypeRaw.includes('주')) {
+   dutyType = '주간';
+   if (dayDutyRoster.length === 0) {
+     dutyMessage = `주간 당직표가 설정되지 않았어요. 설정 페이지에서 설정해주세요!`;
+   } else {
+     const name = dayDutyRoster[dayCount % dayDutyRoster.length];
+     if (!name || users.includes(name) === false) {
+       dutyMessage = `오늘 ${formattedDate} 주간 당직자 (이름: ${name}) 매칭 실패! 설정 페이지를 확인해주세요.`;
+     } else {
+       dutyMessage = `📅 ${formattedDate} ☀️ 주간 당직 \n🏃‍♂️ ${name}`;
+     }
+   }
+ } else if (dutyTypeRaw.includes('야')) {
+   dutyType = '야간';
+   if (night1DutyRoster.length === 0 || night2DutyRoster.length === 0) {
+     dutyMessage = `야간 당직표가 설정되지 않았어요. 설정 페이지에서 설정해주세요!`;
+   } else {
+     const name1 = night1DutyRoster[nightCount % night1DutyRoster.length];
+     const name2 = night2DutyRoster[nightCount % night2DutyRoster.length];
+
+
+     if (!name1 || !name2 || users.includes(name1) === false || users.includes(name2) === false) {
+       dutyMessage = `오늘 ${formattedDate} 야간 당직자 (이름: ${name1} ${name2}) 매칭 실패! 설정 페이지를 확인해주세요.`;
+     } else {
+       dutyMessage = `📅 ${formattedDate} 🌙 야간 당직 \n🏃‍♂️ ${name1}, ${name2}`;
+     }
+   }
+ } else {
+   dutyType = '비번';
+   dutyMessage = `📅 ${formattedDate} 😴 비번`;
+ }
+ return { message: dutyMessage, dutyType: dutyType };
+}
+
+
+// ===============================================
+// ✅ 라우트 핸들러 함수
+// ===============================================
+
+
+/*
+// 🔐 Telegram Mini App 접근 검증 API 핸들러 (수정됨: body.chat_id 우선 사용)
+async function handleVerify(request, env, GROUP_CHAT_ID) {
+ try {
+   const body = await request.json();
+   const initData = body.initData;
+
+
+   if (!initData) {
+     return new Response(JSON.stringify({ ok: false, reason: 'Missing initData' }), {
+       status: 400,
+       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+     });
+   }
+
+
+   const parsed = Object.fromEntries(new URLSearchParams(initData));
+   const hash = parsed.hash;
+   delete parsed.hash;
+
+
+   const checkString = Object.keys(parsed)
+     .sort()
+     .map((k) => `${k}=${parsed[k]}`)
+     .join('\n');
+
+
+   // 검증: HMAC-SHA256(secret=bot_token) vs hash
+   const secretKey = await crypto.subtle.digest(
+     'SHA-256',
+     new TextEncoder().encode(env.BOT_TOKEN)
+   );
+
+
+   const key = await crypto.subtle.importKey(
+     'raw',
+     secretKey,
+     { name: 'HMAC', hash: 'SHA-256' },
+     false,
+     ['sign']
+   );
+
+
+   const signatureBuffer = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(checkString));
+   const signature = Array.from(new Uint8Array(signatureBuffer))
+     .map((b) => b.toString(16).padStart(2, '0'))
+     .join('');
+
+
+   if (signature !== hash) {
+     return new Response(JSON.stringify({ ok: false, reason: 'Invalid signature' }), {
+       status: 403,
+       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+     });
+   }
+
+
+   const user = JSON.parse(parsed.user);
+   const userId = user.id;
+
+
+   // ★★★ 여기 중요: body.chat_id (startapp의 payload) 가 들어오면 우선 사용
+   const payloadChatId = body.chat_id ? String(body.chat_id) : null;
+   const startParamChatId = parsed.start_param ? String(parsed.start_param) : null;
+   const effectiveGroupChatId = payloadChatId || (GROUP_CHAT_ID ? String(GROUP_CHAT_ID) : null);
+
+
+   // 만약 group chat id가 주어지면, getChatMember로 멤버 여부 확인
+   if (effectiveGroupChatId) {
+     const tgResp = await fetch(
+       `https://api.telegram.org/bot${env.BOT_TOKEN}/getChatMember?chat_id=${effectiveGroupChatId}&user_id=${userId}`
+     );
+     const tgData = await tgResp.json();
+
+
+     if (!tgData.ok || ['left', 'kicked'].includes(tgData.result.status)) {
+       return new Response(
+         JSON.stringify({ ok: false, reason: 'Not a member of the group' }),
+         {
+           status: 403,
+           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+         }
+       );
+     }
+     user.status = tgData.result.status;
+   }
+
+
+   return new Response(
+     JSON.stringify({ ok: true, user: user, chat: effectiveGroupChatId ? { id: effectiveGroupChatId } : null }),
+     { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+   );
+ } catch (err) {
+   console.error("Verification error:", err);
+   return new Response(
+     JSON.stringify({ ok: false, error: String(err) }),
+     { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+   );
+ }
+}
+*/
+
+
+// ⚙️ 설정 GET/POST 핸들러 (기존 index.js 로직 그대로)
+async function handleSettings(request, env) {
+ if (request.method === 'POST') {
+   try {
+     const data = await request.json();
+     const { cycle, baseDate, users } = data;
+
+
+     if (!users || users.length === 0) {
+       return new Response('근무자 명단이 필요합니다.', {
+         status: 400,
+         headers: { 'Access-Control-Allow-Origin': '*' }
+       });
+     }
+
+
+     const numPeople = users.length;
+     let dayDutyRoster;
+     if (numPeople % 2 === 0) {
+       const secondHalf = [];
+       for (let i = 0; i < numPeople; i += 2) {
+         secondHalf.push(users[i + 1], users[i]);
+       }
+       dayDutyRoster = [...users, ...secondHalf];
+     } else {
+       dayDutyRoster = Array.from({ length: numPeople * 2 }, (_, i) => users[i % numPeople]);
+     }
+
+
+     const night2DutyRoster = [...dayDutyRoster.slice(2), ...dayDutyRoster.slice(0, 2)];
+
+
+     const settings = { cycle, baseDate, users };
+     await env.SETTINGS_KV.put("settings", JSON.stringify(settings));
+     await env.SETTINGS_KV.put("dayDutyRoster", JSON.stringify(dayDutyRoster));
+     await env.SETTINGS_KV.put("night2DutyRoster", JSON.stringify(night2DutyRoster));
+
+
+     _inMemorySettings = settings;
+
+
+     return new Response(JSON.stringify({ ok: true }), {
+       status: 200,
+       headers: {
+         'Content-Type': 'application/json',
+         'Access-Control-Allow-Origin': '*'
+       }
+     });
+   } catch (err) {
+     console.error("Settings POST error:", err);
+     return new Response(
+       JSON.stringify({ ok: false, error: String(err) }),
+       { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+     );
+   }
+ } else if (request.method === 'GET') {
+   try {
+     if (env.SETTINGS_KV && typeof env.SETTINGS_KV.get === 'function') {
+       const value = await env.SETTINGS_KV.get('settings');
+       if (value) {
+         return new Response(value, { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+       }
+     }
+
+
+     if (_inMemorySettings) {
+       return new Response(JSON.stringify(_inMemorySettings), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+     }
+
+
+     return new Response(JSON.stringify({}), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+   } catch (e) {
+     console.error("Settings GET error:", e);
+     return new Response(
+       JSON.stringify({ success: false, error: String(e) }),
+       {
+         status: 500,
+         headers: {
+           'Content-Type': 'application/json',
+           'Access-Control-Allow-Origin': '*'
+         }
+       }
+     );
+   }
+ }
+ return new Response('Method Not Allowed', {
+   status: 405,
+   headers: { 'Access-Control-Allow-Origin': '*' }
+ });
+}
+
+
+// 🗓️ 근무 스케줄 생성 API 핸들러
+async function handleSchedule(request, env) {
+ const url = new URL(request.url);
+ try {
+   const start = url.searchParams.get('start');
+   const end = url.searchParams.get('end');
+   if (!start || !end) {
+     return new Response(JSON.stringify({ error: 'start/end required' }), { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+   }
+
+
+   // ✅ SETTINGS_KV에서 설정 및 로스터 로드
+   let settings = null;
+   let dayDutyRoster = null;
+   let night2DutyRoster = null;
+   try {
+     const settingsJson = await env.SETTINGS_KV.get("settings");
+     if (settingsJson) {
+       settings = JSON.parse(settingsJson);
+     }
+     const dayDutyRosterJson = await env.SETTINGS_KV.get("dayDutyRoster");
+     if (dayDutyRosterJson) {
+       dayDutyRoster = JSON.parse(dayDutyRosterJson);
+     }
+     const night2DutyRosterJson = await env.SETTINGS_KV.get("night2DutyRoster");
+     if (night2DutyRosterJson) {
+       night2DutyRoster = JSON.parse(night2DutyRosterJson);
+     }
+   } catch (e) {
+     console.error("KV settings load error in handleSchedule:", e);
+   }
+
+
+   // 🚨 설정이 유효하지 않을 때 강제 기본값 적용
+   if (!settings ||
+     typeof settings.cycle !== 'string' ||
+     settings.cycle.trim() === '' ||
+     !Array.isArray(settings.users) ||
+     settings.users.length === 0
+   ) {
+     console.warn("Using fallback settings due to missing or invalid KV data in handleSchedule.");
+     settings = {
+       cycle: '주 주 야 야 비 비',
+       baseDate: start,
+       users: DEFAULT_USERS
+     };
+   }
+
+
+   const cycleTokens = (typeof settings.cycle === 'string' ? settings.cycle : '').trim().split(/\s+/).filter(Boolean);
+   const baseDate = settings.baseDate || start;
+   const users = Array.isArray(settings.users) && settings.users.length > 0 ? settings.users : DEFAULT_USERS;
+
+
+   const numPeople = users.length;
+
+
+   if (!Array.isArray(dayDutyRoster) || dayDutyRoster.length === 0) {
+     if (numPeople % 2 === 0) {
+       const secondHalf = [];
+       for (let i = 0; i < numPeople; i += 2) {
+         secondHalf.push(users[i + 1], users[i]);
+       }
+       dayDutyRoster = [...users, ...secondHalf];
+     } else {
+       dayDutyRoster = Array.from({ length: numPeople * 2 }, (_, i) => users[i % numPeople]);
+     }
+     console.warn("Using fallback dayDutyRoster in handleSchedule.");
+   }
+
+
+   if (!Array.isArray(night2DutyRoster) || night2DutyRoster.length === 0) {
+     if (Array.isArray(dayDutyRoster) && dayDutyRoster.length >= 2) {
+       night2DutyRoster = [...dayDutyRoster.slice(2), ...dayDutyRoster.slice(0, 2)];
+     } else {
+       night2DutyRoster = Array.from({ length: users.length * 2 }, (_, i) => users[(i + 2) % users.length]);
+     }
+     console.warn("Using fallback night2DutyRoster in handleSchedule.");
+   }
+
+
+   const night1DutyRoster = [...dayDutyRoster];
+
+
+   const startDate = parseDateYMD(start);
+   const endDate = parseDateYMD(end);
+   if (endDate < startDate) {
+     return new Response(JSON.stringify({ error: 'end must be >= start' }), { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+   }
+
+
+   const schedule = [];
+   const cycleLen = cycleTokens.length || 1;
+
+
+   let dayDutyRosterPointer = 0;
+   let night1DutyRosterPointer = 0;
+   let night2DutyRosterPointer = 0;
+
+
+   const base = parseDateYMD(baseDate);
+
+
+   const dayDutyRosterLen = dayDutyRoster.length;
+   const night1DutyRosterLen = night1DutyRoster.length;
+   const night2DutyRosterLen = night2DutyRoster.length;
+
+
+   const dayDifference = daysBetweenUTC(startDate, base);
+
+
+   if (dayDifference !== 0) {
+     let totalDayMoves = 0;
+     let totalNightMoves = 0;
+
+
+     const loopStart = dayDifference > 0 ? base : startDate;
+     const loopEnd = dayDifference > 0 ? startDate : base;
+
+
+     for (let d = new Date(loopStart.getTime()); d.getTime() < loopEnd.getTime(); d = new Date(d.getTime() + 24 * 60 * 60 * 1000)) {
+       const offsetFromBase = daysBetweenUTC(d, base);
+       const cidx = wrapPointer(offsetFromBase, cycleTokens.length);
+       const token = cycleTokens[cidx];
+
+
+       if (dayDifference < 0) {
+         if (token.includes('주')) {
+           totalDayMoves--;
+         } else if (token.includes('야')) {
+           totalNightMoves--;
+         // } else if (token.includes('야2')) {
+         //   totalNightMoves--;
+         }
+       } else {
+         if (token.includes('주')) {
+           totalDayMoves++;
+         } else if (token.includes('야')) {
+           totalNightMoves++;
+         // } else if (token.includes('야2')) {
+         //   totalNightMoves++;
+         }
+       }
+     }
+
+
+     dayDutyRosterPointer = wrapPointer(totalDayMoves, dayDutyRosterLen);
+     night1DutyRosterPointer = wrapPointer(totalNightMoves, night1DutyRosterLen);
+     night2DutyRosterPointer = wrapPointer(totalNightMoves, night2DutyRosterLen);
+   }
+
+
+   for (let d = new Date(startDate.getTime()); d.getTime() <= endDate.getTime(); d = new Date(d.getTime() + 24 * 60 * 60 * 1000)) {
+     const currentDateStr = formatYMD(d);
+     const offsetFromBase = daysBetweenUTC(d, base);
+     const cycleIndex = wrapPointer(offsetFromBase, cycleTokens.length);
+     const token = cycleTokens[cycleIndex];
+
+
+     let dayWorker = null;
+     let night1Worker = null;
+     let night2Worker = null;
+
+
+     if (token.includes('주')) {
+       dayWorker = dayDutyRoster[dayDutyRosterPointer];
+       dayDutyRosterPointer = wrapPointer(dayDutyRosterPointer + 1, dayDutyRosterLen);
+     }
+     if (token.includes('야')) {
+       night1Worker = night1DutyRoster[night1DutyRosterPointer];
+       night1DutyRosterPointer = wrapPointer(night1DutyRosterPointer + 1, night1DutyRosterLen);
+     // }
+     // if (token.includes('야2')) {
+       night2Worker = night2DutyRoster[night2DutyRosterPointer];
+       night2DutyRosterPointer = wrapPointer(night2DutyRosterPointer + 1, night2DutyRosterLen);
+     }
+
+
+     const entry = {
+       date: currentDateStr,
+       day: token.includes('주') ? dayWorker : null,
+       night1: token.includes('야') ? night1Worker : null,
+       night2: token.includes('야') ? night2Worker : null,
+       type: token
+     };
+     schedule.push(entry);
+   }
+
+
+   return new Response(JSON.stringify(schedule), {
+     headers: {
+       'Content-Type': 'application/json',
+       'Access-Control-Allow-Origin': '*'
+     }
+   });
+
+
+ } catch (e) {
+   console.error("Schedule generation error in handleSchedule:", e);
+   return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+ }
+}
+
+
+// 💥💥💥 루트 경로 (`/`) 수동 호출 핸들러 (SETTINGS_KV에 맞춰 통합)
+// /api/schedule와 유사하게 작동하지만, 오늘 날짜의 당직 정보 문자열을 반환
+async function handleRootManualFetch(env) {
+ const nowKST = convertUTCtoKST(new Date());
+ const targetDate = new Date(nowKST);
+ targetDate.setHours(0, 0, 0, 0);
+
+
+ const dutyInfo = await getDutyInfoFromSettingsKV(targetDate, env);
+ console.log("Manual Fetch Trigger (KST):", nowKST.toISOString());
+ console.log("Manual Message:", dutyInfo.message);
+ return new Response(dutyInfo.message, {
+   headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Access-Control-Allow-Origin': '*' }
+ });
+}
+
+
+
+
+// 💥💥💥 새로 추가되는 핸들러: URL 파라미터 기반 검증 엔드포인트 💥💥💥
+async function handleVerifyParams(request, env, GROUP_CHAT_ID_ENV_VAR) {
+ let rawBody = null; // 요청 본문의 Raw 데이터를 저장할 변수
+ let bodyJson = null; // Raw 데이터를 JSON으로 파싱한 결과
+
+
+ try {
+     // 1. 요청 본문을 텍스트로 읽어 로깅
+     // request.text()를 호출하면 body 스트림이 소모되므로, 이후 request.json()을 직접 호출할 수 없음.
+     // 대신 JSON.parse()를 사용하여 수동으로 파싱.
+     rawBody = await request.text();
+     console.log("DEBUG_WORKER_RECEIVED_RAW_BODY:", rawBody); // Workers에 들어온 실제 Raw Body 로그
+
+
+     // 2. Raw Body를 JSON 객체로 파싱 시도
+     bodyJson = JSON.parse(rawBody);
+ } catch (e) {
+     console.error("Verification error - Failed to parse request body as JSON:", e);
+     console.error("Received raw body that caused parsing error:", rawBody); // 파싱 실패한 raw body도 로깅
+     return new Response(JSON.stringify({ ok: false, reason: 'Invalid request body format (expected JSON).' }), {
+         status: 400, // Bad Request
+         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+     });
+ }
+
+
+ const { userId, chatId, signature } = bodyJson; // 파싱된 JSON에서 필요한 값 추출
+
+
+ // 3. 필수 파라미터 누락 확인
+ if (!userId || !chatId || !signature) {
+     console.error("Verification error - Missing required parameters in JSON body:", { userId, chatId, signature });
+     return new Response(JSON.stringify({ ok: false, reason: 'Missing userId, chatId or signature in request body.' }), {
+         status: 400, // Bad Request
+         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+     });
+ }
+
+
+ try {
+     // 4. ✨ 보안 강화: 시그니처 재검증
+     const expectedSignature = await generateSignature(userId, chatId, env.BOT_TOKEN);
+     if (expectedSignature !== signature) {
+         console.warn(`Verification error - Invalid signature for userId=${userId}, chatId=${chatId}. Expected: ${expectedSignature}, Got: ${signature}`);
+         return new Response(JSON.stringify({ ok: false, reason: 'Invalid signature.' }), {
+             status: 403, // 접근 금지: 위변조 의심
+             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+         });
+     }
+
+
+     // 5. 그룹 멤버십 확인 (GROUP_CHAT_ID_ENV_VAR 환경 변수가 설정된 경우)
+     // GROUP_CHAT_ID_ENV_VAR는 Workers 환경 변수로 설정된 '접근 허용 그룹 ID'입니다.
+     if (GROUP_CHAT_ID_ENV_VAR) { // 환경 변수가 설정된 경우에만 멤버십 검증 진행
+         if (String(chatId) !== String(GROUP_CHAT_ID_ENV_VAR)) { // 문자열 비교를 위해 String()으로 형변환
+             console.warn(`Verification error - Mini App launched from non-allowed chat. Expected chat_id: ${GROUP_CHAT_ID_ENV_VAR}, Got: ${chatId}`);
+             return new Response(
+                 JSON.stringify({ ok: false, reason: 'This Mini App can only be launched from a specific group chat.' }),
+                 {
+                     status: 403, // 접근 금지
+                     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+                 }
+             );
+         }
+
+
+         // 해당 그룹의 멤버인지 텔레그램 API를 통해 확인
+         const tgResp = await fetch(
+             `https://api.telegram.org/bot${env.BOT_TOKEN}/getChatMember?chat_id=${GROUP_CHAT_ID_ENV_VAR}&user_id=${userId}`
+         );
+         const tgData = await tgResp.json();
+
+
+         if (!tgData.ok || ['left', 'kicked'].includes(tgData.result.status)) {
+             console.warn(`Verification error - User ${userId} is not a member of the allowed group ${GROUP_CHAT_ID_ENV_VAR}. Status: ${tgData.result ? tgData.result.status : 'API error'}`);
+             return new Response(
+                 JSON.stringify({ ok: false, reason: 'You are not a member of the allowed group.' }),
+                 {
+                     status: 403, // 접근 금지
+                     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+                 }
+             );
+         }
+        
+         // 6. 모든 검증 성공: 임시 user 객체 생성 및 응답
+         const user = { id: userId, status: tgData.result.status, first_name: `User ${userId}` };
+         return new Response(
+             JSON.stringify({ ok: true, user: user, chat_id: chatId }),
+             { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+         );
+     } else {
+         // GROUP_CHAT_ID_ENV_VAR 환경 변수가 설정되지 않은 경우
+         // 특정 그룹 멤버십 검증 없이 userId, chatId가 유효한지 확인 후 허용
+         console.log("Group chat membership not enforced (GROUP_CHAT_ID not set in Workers env). Allowing access.");
+         return new Response(
+             JSON.stringify({ ok: true, user: { id: userId }, chat_id: chatId, message: 'Group chat membership not enforced (GROUP_CHAT_ID not set).' }),
+             { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+         );
+     }
+ } catch (err) {
+     console.error("Verification error - Unhandled exception:", err);
+     return new Response(
+         JSON.stringify({ ok: false, error: String(err) }),
+         { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+     );
+ }
+}
+
+
+
+
+// ===============================================
+// ✅ Worker 메인 엔트리 포인트
+// ===============================================
+
+
+export default {
+ // 🚀 API 요청 처리
+ async fetch(request, env, ctx) {
+   const url = new URL(request.url);
+   const GROUP_CHAT_ID_TO_ENFORCE = env.GROUP_CHAT_ID ? String(env.GROUP_CHAT_ID) : null;
+   const TELEGRAM_BOT_DEFAULT_CHAT_ID = env.CHAT_ID;
+
+
+   // ⚙️ 💥💥💥 가장 먼저 OPTIONS 프리플라이트 요청 처리 (CORS) 💥💥💥
+   if (request.method === 'OPTIONS') {
+       return new Response(null, {
+           status: 204, // No Content 상태 코드로 응답 (성공적인 프리플라이트 응답)
+           headers: {
+               'Access-Control-Allow-Origin': '*', // 모든 오리진 허용
+               'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', // 허용할 메서드
+               'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, X-Chat-Id',// 허용할 헤더
+               'Access-Control-Max-Age': '86400' // 프리플라이트 응답 캐시 시간 (초)
+           }
+       });
+   }
+
+
+   // 💥💥💥 텔레그램 봇 관련 POST 요청 처리 💥💥💥
+   // 이 블록은 텔레그램 웹훅에서 들어오는 업데이트 (callback_query 등)를 처리합니다.
+   if (request.method === 'POST' && url.pathname === '/') { // 텔레그램 웹훅은 보통 루트 경로로 POST 요청을 보냄
+     const update = await request.json(); // 웹훅 요청은 body에 업데이트 객체가 포함됨
+
+
+     if (update.callback_query) {
+       const callbackQuery = update.callback_query;
+       const data = callbackQuery.data;
+       const callbackQueryId = callbackQuery.id;
+       const messageChatId = callbackQuery.message.chat.id;
+       const userId = callbackQuery.from.id;
+       const messageId = callbackQuery.message.message_id;
+
+
+       console.log(`Callback query received: ${data}`);
+
+
+       switch (data) {
+         case 'request_mini_app_access':
+           await answerCallbackQuery(env, callbackQueryId, '미니앱을 준비 중입니다...');
+           const miniAppBaseUrl = 'https://notifier-pages-frontend.pages.dev/';
+           const signature = await generateSignature(userId, messageChatId, env.BOT_TOKEN);
+           const parameterizedMiniAppUrl = `${miniAppBaseUrl}?user_id=${userId}&chat_id=${messageChatId}&sig=${signature}`;
+           await editMessageReplyMarkup(env, messageChatId, messageId, [[
+               { text: '월간 당직 일정', url: parameterizedMiniAppUrl }
+           ]]);
+           break;
+         default:
+           console.log(`Unknown callback data: ${data}`);
+           await answerCallbackQuery(env, callbackQueryId, '알 수 없는 요청입니다.', true);
+           break;
+       }
+       return new Response("OK", { status: 200 });
+     }
+     return new Response("OK", { status: 200 });
+   }
+  
+   // 🚀 REST API 라우팅 (GET/POST 요청 처리)
+   // 💥💥💥 /verify_params는 반드시 POST 메서드로만 처리! 💥💥💥
+   if (url.pathname === '/verify_params' && request.method === 'POST') {
+       return handleVerifyParams(request, env, GROUP_CHAT_ID_TO_ENFORCE);
+   }
+   // 💥💥💥 /api/settings는 GET/POST 모두 가능 💥💥💥
+   else if (url.pathname === '/api/settings') {
+     return handleSettings(request, env);
+   }
+   // 💥💥💥 여기가 변경점! /api/schedule에 대한 OPTIONS 요청도 허용! 💥💥💥
+   else if (url.pathname === '/api/schedule') { // GET이든 OPTIONS든 일단 이 경로로 들어옴
+     if (request.method === 'GET') {
+         return handleSchedule(request, env);
+     } else if (request.method === 'OPTIONS') {
+         // /api/schedule에 대한 프리플라이트 요청은 204 No Content로 응답
+         return new Response(null, {
+             status: 204,
+             headers: {
+                 'Access-Control-Allow-Origin': '*',
+                 'Access-Control-Allow-Methods': 'GET, OPTIONS', // GET과 OPTIONS 메서드 허용
+                 'Access-Control-Allow-Headers': 'Content-Type,  X-User-Id, X-Chat-Id',
+                 'Access-Control-Max-Age': '86400'
+             }
+         });
+     }
+   } 
+   // 💥💥💥 루트 경로 ('/')는 GET 요청에 대한 응답만 💥💥💥
+   else if (url.pathname === '/' && request.method === 'GET') {
+     return handleRootManualFetch(env);
+   }
+
+
+   // ❓ 정의되지 않은 경로 또는 메서드 요청 시 Not Found 응답
+   return new Response('Not Found or Method Not Allowed', {
+     status: 404,
+     headers: {
+       'Access-Control-Allow-Origin': '*', // Not Found 응답에도 CORS 헤더 포함
+       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+       'Access-Control-Allow-Headers': 'Content-Type, X-User-Id, X-Chat-Id',
+     }
+   });
+ },
+
+
+ // ⏰ Cloudflare Scheduler (Cron Trigger) 이벤트 핸들러
+ async scheduled(controller, env, ctx) {
+   // 💥 CHAT_ID 대신 TELEGRAM_BOT_DEFAULT_CHAT_ID 사용 (env.CHAT_ID를 의미)
+   const currentChatId = env.CHAT_ID;
+   if (!currentChatId) {
+     console.error("CHAT_ID environment variable is not set for scheduled tasks.");
+     return;
+   }
+  
+   const nowKST = convertUTCtoKST(new Date());
+   const targetDate = new Date(nowKST);
+   targetDate.setHours(0, 0, 0, 0);
+
+
+   const dutyInfoFull = await getDutyInfoFromSettingsKV(targetDate, env);
+  
+   const hour = nowKST.getHours();
+   const dutyType = dutyInfoFull.dutyType;
+
+
+   // 밤 9시~10시 (21~22시) 사이의 "야1", "야2"일 때만 스케줄 알림 발송
+   const isNightDutyTime = (hour >= 0 && hour < 24) && (dutyType.includes('야1') || dutyType.includes('야2'));
+   // 매일 오전 8시~9시 (8~9시) 사이의 "주" 일 때만 스케줄 알림 발송
+   const isDayDutyTime = (hour >= 0 && hour < 24) && (dutyType.includes('주'));
+   const isOffDutyTime = (hour >= 0 && hour < 24) && (dutyType.includes('비'));
+
+
+   const shouldSendMessage = isNightDutyTime || isDayDutyTime || isOffDutyTime;
+
+
+   if (shouldSendMessage) {
+     console.log("Scheduled Trigger (KST):", nowKST.toISOString());
+     console.log("Scheduled Message:", dutyInfoFull.message);
     
-    /* 오늘 날짜 카드 강조 */
-    .schedule-card.today {
-      border: 2px solid #137fec;
-      box-shadow: 0 2px 8px rgba(19, 127, 236, 0.2);
-    }
+     const targetUrl = 'https://notifier-pages-frontend.pages.dev/'; // Mini App 프론트엔드 URL
     
-    .card-date {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 60px;
-      position: relative;
-    }
-    .day-num {
-      font-weight: 700;
-      font-size: 1.1rem;
-      color: #101922;
-    }
-    .day-name {
-      font-size: 0.95rem;
-      color: #6c757d;
-    }
-
-    /* 주말 색상 */
-    .day-name.weekend-sat { color: #137fec; }
-    .day-name.weekend-sun { color: #dc3545; }
-
-    /* 근무 타입 아이콘 위치 조정 (수직 중앙 정렬) */
-    .duty-icon {
-        position: absolute;
-        top: 50%; /* 상단 50% 위치 */
-        transform: translateY(-50%); /* 아이콘 높이의 50%만큼 위로 이동 */
-        left: -2px; /* 좌측에서 조금 우측으로 이동 */
-        font-size: 1.1rem;
-        transition: color 0.2s;
-    }
-    .day-icon { color: #ffc107; }
-    .night-icon { color: #4a5482; }
-    .mixed-icon { color: #f96d00; }
-
-    /* 당직자 열 정렬 */
-    .card-duties {
-      flex-grow: 1;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-left: 1px solid #eee;
-      padding-left: 20px; /* 주간당직자를 오른쪽으로 띄우기 */
-      color: #555;
-      font-size: 1.0rem;
-    }
-    .day-duty-col {
-      flex: 1;
-      text-align: center; /* 주간 당직자 중앙 정렬 유지 */
-      font-weight: 500;
-    }
-    .night-duty-col {
-      flex: 1;
-      text-align: center; /* 야간 당직자를 중앙쪽으로 이동 */
-      font-weight: 500;
-    }
-
-    /* ---------- Settings Modal / Toast / Footer ---------- */
-    #settings-modal {
-      display: none; position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(3px);
-      justify-content: center; align-items: center; z-index: 1000;
-      animation: fadeIn 0.25s ease-out;
-    }
-    #settings-modal .modal-content {
-      background: #fff; border-radius: 18px; width: 92%; max-width: 380px;
-      padding: 24px 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-      animation: scaleUp 0.25s ease-out; position: relative; text-align: left;
-      box-sizing: border-box;
-    }
-    /* ... (Modal input, button styles) ... */
-    #settings-modal input {
-      width: calc(100% - 4px); /* 💡 width 수정 (패딩 고려) */
-      box-sizing: border-box;
-      padding: 9px 10px;
-      font-size: 1rem;
-      border-radius: 8px; /* 메인 디자인과 통일성 */
-      border: 1px solid #ddd;
-      background-color: #f7f8fa; /* 배경색을 연하게 */
-      margin-top: 20px;
-      margin-bottom: 30px;
-      transition: all 0.2s;
-    }
-    #settings-modal input:focus {
-      border-color: #137fec; /* 포커스 시 강조 색상 */
-      background-color: #fff;
-      outline: none;
-    }
-    
-    .modal-buttons {
-      display: flex;
-      justify-content: flex-end; /* 오른쪽으로 배치 */
-      gap: 10px;
-      margin-top: 24px;
-    }
-    .button {
-      border: none;
-      border-radius: 8px; /* 모서리 통일 */
-      padding: 10px 16px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-    }
-    .button.save {
-      background-color: #137fec; /* 메인 강조 색상 */
-      color: #fff;
-    }
-    .button.cancel {
-      background-color: #6c757d; /* 회색 톤 */
-      color: #fff;
-    }
-    /* 호버 효과 (Mini App에서는 잘 사용되지 않지만, 웹뷰 표준을 위해 유지) */
-    .button.save:hover { background-color: #0f6ed4; }
-    .button.cancel:hover { background-color: #5c636a; }
-
-    /* Footer Nav */
-    .footer-nav {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      max-width: 450px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: none;
-      justify-content: space-around;
-      background-color: #fff;
-      border-top: 1px solid #eee;
-      box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
-      z-index: 50;
-    }
-    .footer-nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 8px 0;
-      text-decoration: none;
-      color: #6c757d;
-      font-size: 0.7rem;
-      flex: 1;
-    }
-    .footer-nav-item.active, .footer-nav-item:hover {
-      color: #137fec;
-    }
-    .footer-nav-item span.material-icons {
-      font-size: 1.4rem;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; } to { opacity: 1; }
-    }
-    @keyframes scaleUp {
-      from { transform: scale(0.95); opacity: 0.8; }
-      to { transform: scale(1); opacity: 1; }
-    }
-    
-    /* ----------- Flexbox 기반 아이콘 및 텍스트 정렬 ----------- */
-
-    /* 아이콘과 텍스트를 감싸는 그룹을 Flex 컨테이너로 만듦 */
-    .icon-text-group {
-      display: flex;         /* 이 요소를 Flexbox 컨테이너로 설정 */
-      align-items: center;   /* 자식 요소들(아이콘, 텍스트)을 세로축(교차축) 중앙에 정렬 */
-      gap: 8px;              /* 자식 요소들 사이에 8px의 간격 */
-      margin-bottom: 5px;    /* 다음 입력 필드와의 간격 조정 (필요시) */
-      /* H2나 Label의 기본 margin이 있을 수 있으니 초기화 */
-    }
-
-    .icon-text-group h2,
-    .icon-text-group label {
-      margin: 0;             /* h2와 label의 기본 마진을 없애서 flexbox 정렬에 방해되지 않도록 함 */
-      line-height: 1.2;      /* 텍스트의 라인 높이 조절 (취향에 따라) */
-    }
-
-    /* 설정 제목 아이콘과 텍스트 그룹 (옵션) */
-    .icon-text-group.header-group {
-        /* 필요하면 설정 제목 부분에만 추가적인 스타일 적용 가능 */
-        margin-top: 10px; /* 상단 여백 추가 등 */
-    }
-
-    #access-denied {
-      display: none; /* 💥💥💥 초기에는 display: none;으로 숨김 💥💥💥 */
-      margin-top: 50px; 
-      color: #dc3545; 
-      font-weight:600;
-    }
-
-    #toast {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        
-        background-color: rgba(0, 0, 0, 0.75);
-        color: white;
-        padding: 12px 24px;
-        border-radius: 25px;
-        z-index: 1000;
-        
-        /* 💥💥💥 이 상태로 유지! 💥💥💥 */
-        opacity: 0;
-        visibility: hidden; 
-        transition: opacity 1.0s ease-in-out; 
-        
-        font-size: 1.0em;
-        white-space: nowrap;
-    }
-
-
-  </style>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-</head>
-
-
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="month-selector">
-        <span class="arrow material-icons" onclick="prevMonth()">chevron_left</span>
-        <h2 id="current-month-year">2025년 10월</h2>
-        <span class="arrow material-icons" onclick="nextMonth()">chevron_right</span>
-      </div>
-    </div>
-        <div id="app-content">
-        <div class="loading-spinner"></div>
-        <p>미니앱을 로딩하고 있습니다...</p>
-        <p>잠시만 기다려 주세요!</p>
-    </div>
-
-
-    <div id="telegram-info" style="padding: 16px; background: #eef; border-radius: 8px; margin: 16px; display: none;">
-      Telegram WebApp 정보 로딩 중...
-    </div>
-    
-    <!-- ❗ 인증 실패 시 메시지 표시 -->
-    <div id="access-denied" style="display:none; margin-top: 50px; color: #dc3545; font-weight:600;">
-      <!-- JavaScript에서 동적으로 내용 채움 -->
-      <p>이 미니앱은 특정 텔레그램 단체방 멤버만 접근할 수 없습니다.</p>
-    </div>
-
-    <div id="main-content" class="schedule-list"></div>
-
-    <div id="settings-modal">
-
-      <div class="modal-content">
-        <!-- <div class="icon-text-group header-group"> <
-          <span class="material-icons-outlined">settings</span>
-          <h2>설정</h2>
-        </div> -->
-
-        <!-- <span class="material-icons close-icon" onclick="closeSettingsModal()">close</span> 닫기 버튼은 따로 둠 -->
-
-        <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
-          <span class="material-icons">wb_sunny</span>
-          <label for="duty-cycle">근무 주기 (공백으로 구분)</label>
-        </div>
-        <input id="duty-cycle" type="text" placeholder="예: 주 주 야 야 비 비">
-
-        <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
-          <span class="material-icons">flag</span>
-          <label for="duty-base-date">기준일 (첫 번째 주간 근무일)</label>
-        </div>
-        <input id="duty-base-date" type="date">
-
-        <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
-          <span class="material-icons">group</span>
-          <label for="duty-users">근무자 명단 (공백으로 구분)</label>
-        </div>
-        <input id="duty-users" type="text" placeholder="예: 홍길동 김철수 이영희">
-
-        <div class="modal-buttons">
-          <button class="button cancel" onclick="closeSettingsModal()">닫기</button>
-          <button class="button save" onclick="saveDutyCycle()">저장</button>
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-  <div id="toast"></div>
-
-  <footer class="footer-nav">
-    <a class="footer-nav-item" href="#" onclick="goToToday(); return false;">
-      <span class="material-icons">today</span>
-      <span>Today</span>
-    </a>
-    <a class="footer-nav-item" href="#" onclick="openSettingsModal(); return false;">
-      <span class="material-icons">settings</span>
-      <span>Settings</span>
-    </a>
-  </footer>
-
-    </div>
-  
-  
-    <!-- 💥💥💥 이 아래 <script> 태그 전체를 교체 후 테스트 후 복구 여부 결정 💥💥💥 -->
-  
-    <script>
-        // ✅ 전역 상수 및 유틸리티
-      const DAYS = ['일', '월', '화', '수', '목', '금', '토']; 
-      let currentDate = new Date(); 
-      const WORKER_API_BASE = 'https://notifier-worker-backend.annae0sang3.workers.dev'; // 💥💥💥 케이오님 실제 Worker URL로 변경! 💥💥💥
-
-      // =========================================================================
-      // ✅ 텔레그램 WebApp 및 사용자 검증 로직 (URL 파라미터 기반으로 변경)
-      // =========================================================================
-      let currentUserId = null; // 💥 검증된 사용자 ID를 저장할 전역 변수
-      let currentChatId = null; // 💥 현재 미니앱이 열린 채팅방 ID 저장할 전역 변수
-
-      document.addEventListener('DOMContentLoaded', async () => {
-                
-          if (window.Telegram && window.Telegram.WebApp) {
-            window.Telegram.WebApp.ready();
-            window.Telegram.WebApp.expand(); // 미니앱을 전체 화면으로 확장
-          }
-        
-          const urlParams = new URLSearchParams(window.location.search);
-          const token = urlParams.get('token'); // URL에서 'token' 파라미터 값 추출
-        
-          let currentUserId = null;
-          let currentChatId = null;
-        
-          // URL에 토큰이 있는지 확인
-          if (token) {
-            // 🔑 토큰으로 백엔드에서 userId, chatId 검증 및 가져오기
-            try {
-              // ** 중요: 'https://your-cloudflare-worker-domain' 부분을 케이오님의 실제 워커 도메인으로 변경해야 합니다! **
-              const verifyTokenUrl = `${WORKER_API_BASE}`; 
-              
-              // 백엔드 API 호출: URL 파라미터로 토큰 전달
-              const response = await fetch(`${verifyTokenUrl}?token=${token}`);
-              const data = await response.json();
-        
-              if (data.ok) {
-                currentUserId = data.userId;
-                currentChatId = data.chatId;
-                console.log('Token verified:', { userId: currentUserId, chatId: currentChatId });
-        
-                // ✅ 검증이 완료된 userId와 chatId를 활용하여 미니앱의 주요 로직 실행
-                // --------------------------------------------------------------------------
-                // **이 부분에 케이오님의 기존 미니앱 핵심 로직을 배치하면 됩니다.**
-                // 기존에 스케줄 데이터를 로드하거나 UI를 업데이트하는 함수들을
-                // currentUserId와 currentChatId 값을 인자로 받아 호출하도록 변경할 수 있습니다.
-                // 예를 들어, 기존 스케줄 로딩 함수가 `loadSchedule(userId, chatId)` 였다면,
-                // 여기서 `loadSchedule(currentUserId, currentChatId)` 처럼 호출하는 거죠.
-        
-                document.getElementById('app-content').innerText = `스케줄 로드 준비 완료! \n사용자: ${currentUserId}\n채팅방: ${currentChatId}`;
-        
-                // 예시: 스케줄 데이터를 가져오는 API 호출
-                // (실제 코드에서는 currentUserId와 currentChatId를 URL 파라미터나 요청 헤더에 포함시켜 백엔드로 보낼 수 있습니다.)
-                const scheduleApiUrl = `${WORKER_API_BASE}/api/schedule`; // 스케줄 API 워커 도메인도 변경
-                const startDate = '2025-11-01'; // 예시 날짜
-                const endDate = '2025-11-30';   // 예시 날짜
-                
-                const scheduleResponse = await fetch(`${scheduleApiUrl}?start=${startDate}&end=${endDate}`, {
-                    method: 'GET',
-                    headers: {
-                        // 백엔드 Worker의 handleSchedule 함수에서 X-User-Id, X-Chat-Id를 필요로 한다면
-                        // 이 헤더들을 추가해서 보낼 수 있습니다.
-                        // (현재 handleSchedule은 이 헤더들을 직접 사용하지 않지만, 검증이나 로깅용으로 유용할 수 있어요.)
-                        'X-User-Id': currentUserId, 
-                        'X-Chat-Id': currentChatId,
-                        'Content-Type': 'application/json',
-                        // 'Access-Control-Allow-Origin': '*' // 프론트엔드에서는 보통 자동으로 추가되거나 백엔드에서 허용함
-                    }
-                });
-                const scheduleData = await scheduleResponse.json();
-                console.log('Schedule data loaded:', scheduleData);
-                // 여기에 스케줄 데이터를 UI에 표시하는 케이오님의 실제 로직을 추가합니다.
-                document.getElementById('app-content').innerText += `\n\n첫 번째 스케줄: ${scheduleData[0]?.date} - ${scheduleData[0]?.day || scheduleData[0]?.night1}`;
-        
-        
-                // --------------------------------------------------------------------------
-        
-              } else {
-                // 토큰 검증 실패 시
-                document.getElementById('app-content').innerText = `오류: ${data.reason || '토큰 검증 실패'}`;
-                console.error('Token verification failed:', data.reason);
-                if (window.Telegram && window.Telegram.WebApp) {
-                  window.Telegram.WebApp.showAlert(`토큰 검증 실패: ${data.reason || '알 수 없는 오류'}`);
-                  // window.Telegram.WebApp.close(); // 치명적인 오류 시 미니앱 닫기 (사용자 경험 고려)
-                }
-              }
-            } catch (error) {
-              // 네트워크 요청 실패 등 예외 발생 시
-              document.getElementById('app-content').innerText = '미니앱 로딩 중 네트워크 오류가 발생했습니다.';
-              console.error('Failed to fetch token verification:', error);
-              if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.showAlert('미니앱 로딩 중 네트워크 오류가 발생했습니다.');
-                // window.Telegram.WebApp.close();
-              }
-            }
-          } else {
-            // URL에 토큰 파라미터가 없을 경우
-            document.getElementById('app-content').innerText = '미니앱을 실행하려면 텔레그램 봇을 통해 접근해주세요.';
-            console.warn('No token found in URL. Access denied.');
-            if (window.Telegram && window.Telegram.WebApp) {
-              window.Telegram.WebApp.showAlert('잘못된 접근입니다. 텔레그램 봇을 통해 다시 시도해주세요.');
-              // window.Telegram.WebApp.close();
-            }
-          }
-
-
-
-
-
-        
-          const headerElement = document.querySelector('.header');
-          const mainContentElement = document.getElementById('main-content');
-          const footerNavElement = document.querySelector('.footer-nav');
-          const telegramInfoDiv = document.getElementById('telegram-info');
-          const accessDeniedDiv = document.getElementById('access-denied');
-          // const telegramInfoDeniedDiv = document.getElementById('telegram-info-denied'); // #access-denied 내부에 바로 메시지 표시할 것이므로 별도 div 필요 없음
-
-          // 초기 UI 숨기기
-          headerElement.style.display = 'none';
-          mainContentElement.style.display = 'none';
-          footerNavElement.style.display = 'none';
-          telegramInfoDiv.style.display = 'none'; // 초기 정보창도 숨김
-
-          // 텔레그램 WebApp 스크립트 로드 여부 및 존재 여부 확인
-          if (typeof Telegram === 'undefined' || !window.Telegram.WebApp) {
-              console.log('❌ 텔레그램 미니앱 환경이 아닙니다. 일반 웹페이지로 열렸습니다.');
-              accessDeniedDiv.querySelector('p').textContent = '이 앱은 텔레그램 미니앱 환경에서만 동작합니다.';
-              accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
-              return;
-          }
-
-          // 텔레그램 WebApp 준비 완료 알림
-          window.Telegram.WebApp.ready(); 
-          
-          // 💥💥💥 URL 쿼리 파라미터에서 user_id, chat_id, sig를 추출합니다! 💥💥💥
-          //const urlParams = new URLSearchParams(window.location.search);
-          const userId = urlParams.get('user_id');
-          const chatId = urlParams.get('chat_id');
-          const signature = urlParams.get('sig'); // 보안 서명
-
-          console.log(`DEBUG_PARAMS: userId=${userId}, chatId=${chatId}, signature=${signature}`);
-        
-          const tg = window.Telegram.WebApp;
-          console.log("initData:", tg.initData);
-          console.log("initDataUnsafe:", tg.initDataUnsafe);
-        
-          console.log(`DEBUG_PAGES_FETCH_URL: ${WORKER_API_BASE}/verify_params`);
-
-          if (!userId || !chatId || !signature) {
-              console.error('❌ URL 파라미터에 user_id, chat_id 또는 sig가 누락되었습니다.');
-              accessDeniedDiv.querySelector('p').textContent = '에러: 필수 정보가 누락되어 인증할 수 없습니다.';
-              accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
-              return;
-          }
-
-          console.log(`URL Params from Frontend: userId=${userId}, chatId=${chatId}, signature=${signature}`);
-
-          try {
-              // 💥💥💥 Pages에서 Workers로 전송할 JSON 바디를 미리 찍어봅니다. 💥💥💥
-              const bodyToSend = JSON.stringify({ userId, chatId, signature });
-              console.log("DEBUG_PAGES_BODY_TO_SEND:", bodyToSend); 
-              console.log("DEBUG_PAGES_FETCH_URL:", `${WORKER_API_BASE}/verify_params`);
-            
-              // 백엔드 Workers의 '/verify_params' 엔드포인트로 추출한 정보를 전송하여 사용자 검증
-              const response = await fetch(`${WORKER_API_BASE}/verify_params`, { 
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId, chatId, signature }), 
-              });
-
-              const verificationResult = await response.json();
-
-              if (verificationResult.ok) {
-                  // ✅ 검증 성공 시
-                  const user = verificationResult.user || {};
-                  
-                  currentUserId = userId; // 💥 전역 변수에 저장
-                  currentChatId = chatId; // 💥 전역 변수에 저장
-
-                  // telegramInfoDiv.innerHTML = `
-                  //     <p><strong>사용자 이름:</strong> ${user.first_name || `User ${user.id}`} (ID: ${user.id})</p>
-                  //     <p><strong>그룹 ID:</strong> ${verificationResult.chat_id}</p>
-                  //     <p style="color: #28a745; font-weight: 600;">✓ 인증 완료</p>
-                  // `;
-                  // telegramInfoDiv.style.display = 'block'; 
-                  console.log(`✓ 인증 완료! 사용자 ID: ${userId}, 그룹 ID: ${chatId}`);  
-                
-                  accessDeniedDiv.style.display = 'none'; // 접근 거부 메시지는 숨김 (혹시 초기 display:block 설정되어 있을 경우 대비)
-
-                  // ✅ 검증 통과 후 미니앱의 주요 UI 요소들을 보이게 함
-                  headerElement.style.display = 'block';
-                  mainContentElement.style.display = 'block';
-                  footerNavElement.style.display = 'flex'; // footer-nav는 flex로 설정되어 있으므로
-                  
-                  goToToday(); // 오늘 날짜 스케줄 로드 시작
-              } else {
-                  // ❌ 검증 실패 시
-                  console.error('❌ 사용자 검증 실패:', verificationResult.reason);
-                  accessDeniedDiv.querySelector('p').textContent = `🚨 인증 실패: ${verificationResult.reason}`;
-                  accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
-                  // 텔레그램 Web App 닫기 (선택 사항)
-                  // window.Telegram.WebApp.close(); 
-              }
-          } catch (error) {
-              console.error('❌ 사용자 검증 중 통신 오류:', error);
-              accessDeniedDiv.querySelector('p').textContent = `🚨 인증 중 네트워크 오류: ${error.message}`;
-              accessDeniedDiv.style.display = 'block';
-              // window.Telegram.WebApp.close();
-          }
-      });
-
-      // =========================================================================
-      // ✅ 기존 스케줄 관련 함수들 (currentUserId를 사용하도록 수정)
-      // =========================================================================
-      
-      // updateMonthHeader, prevMonth, nextMonth, getDaysInMonth, scrollToTodayCard, createDutyCard 함수들은 변경 없이 기존 코드 그대로 유지합니다.
-      // 케이오님의 html 파일에 있던 내용들을 아래에 포함시켰습니다.
-
-      /**
-       * 월/년 헤더를 업데이트합니다.
-       */
-      function updateMonthHeader() {
-          const options = { year: 'numeric', month: 'long' };
-          document.getElementById('current-month-year').textContent = currentDate.toLocaleString('ko-KR', options);
-      }
-
-      /**
-       * 월 변경 (이전 달)
-       */
-      function prevMonth() {
-          currentDate.setMonth(currentDate.getMonth() - 1);
-          renderSchedule();
-          showToast(`${currentDate.getFullYear()}년 ${currentDate.getMonth() + 1}월`);
-      }
-
-      /**
-       * 월 변경 (다음 달)
-       */
-      function nextMonth() {
-          currentDate.setMonth(currentDate.getMonth() + 1);
-          renderSchedule();
-          showToast(`${currentDate.getFullYear()}년 ${currentDate.getMonth() + 1}월`);
-      }
-
-      /**
-       * 월의 마지막 날짜를 가져옵니다.
-       */
-      function getDaysInMonth(date) {
-          return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-      }
-
-      /**
-       * 오늘의 날짜 카드에 스크롤합니다.
-       */
-      function scrollToTodayCard() {
-          const todayCard = document.querySelector('.schedule-card.today');
-          const header = document.querySelector('.header'); 
-
-          if (todayCard && header) {
-              const headerHeight = header.offsetHeight; 
-              const targetScrollY = todayCard.offsetTop - headerHeight - 10;
-              window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
-          } else if (todayCard) {
-              todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-      }
-
-      /**
-       * 스케줄 카드를 생성합니다.
-       * 💥 백엔드 응답 형식에 맞춰 item.day, item.night1, item.night2로 수정했습니다.
-       */
-      function createDutyCard(dayNum, dayName, dateObj, dutyData = null) {
-        const today = new Date();
-        const isToday = dateObj.getDate() === today.getDate() &&
-                        dateObj.getMonth() === today.getMonth() &&
-                        dateObj.getFullYear() === today.getFullYear();
-
-        const isSaturday = dateObj.getDay() === 6;
-        const isSunday = dateObj.getDay() === 0;
-
-        let cardHtml = `<div class="schedule-card${isToday ? ' today' : ''}">`;
-        
-        // 아이콘 결정을 위한 변수 초기화
-        let dutyIconHtml = ''; // 💥 날짜 옆에 표시될 아이콘 HTML
-        if (dutyData && dutyData.type) {
-            if (dutyData.type === '주') {
-                dutyIconHtml = `<span class="material-icons duty-icon day-icon">wb_sunny</span>`;
-            } else if (dutyData.type === '야') {
-                dutyIconHtml = `<span class="material-icons duty-icon night-icon">nights_stay</span>`;
-            }
-        }
-
-
-        // 💥💥💥 날짜 영역 HTML 구조 변경: 아이콘을 card-date 안에 날짜보다 먼저 위치시킵니다. 💥💥💥
-        cardHtml += `
-            <div class="card-date">
-                ${dutyIconHtml} <!-- 💥 아이콘은 여기에 위치! 💥 -->
-                <span class="day-num">${dayNum}</span>
-                <span class="day-name${isSaturday ? ' weekend-sat' : isSunday ? ' weekend-sun' : ''}">${dayName}</span>
-            </div>
-        `;
-
-        // 💥💥💥 스케줄 데이터 처리 로직은 그대로 유지 💥💥💥
-        if (dutyData && (dutyData.day || dutyData.night1 || dutyData.night2)) {
-            cardHtml += `
-                <div class="card-duties">
-                    <!-- 주간 근무자 영역 -->
-                    <div class="duty-col day-duty-col">
-                        ${dutyData.day ? `
-                            <span>${dutyData.day}</span>
-                        ` : ''}
-                    </div>
-                    <!-- 야간 근무자 영역 -->
-                    <div class="duty-col night-duty-col">
-                        ${(dutyData.night1 || dutyData.night2) ? `
-                            <span>
-                                ${dutyData.night1 || ''} 
-                                ${ (dutyData.night1 && dutyData.night2) ? `, ` : '' } 
-                                ${dutyData.night2 || ''}
-                            </span>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        } else {
-            cardHtml += `
-                <div class="card-duties" style="text-align: center;">
-                    <span style="color: #aaa;">${dutyData && dutyData.type === '비' ? ' ' : '스케줄 없음'}</span>
-                </div>
-            `;
-        }
-        cardHtml += `</div>`;
-        return cardHtml;
-    }
-
-
-      /**
-       * 스케줄을 렌더링하고, 필요 시 오늘 날짜로 스크롤합니다.
-       * 💥 currentUserId와 currentChatId를 사용하여 백엔드 요청 시 활용합니다.
-       * @param {boolean} [scrollToToday=false] 렌더링 후 오늘 날짜로 스크롤할지 여부
-       */
-      async function renderSchedule(scrollToToday = false) { 
-          // 💥 검증되지 않은 사용자 ID라면 스케줄 로드를 중단합니다.
-          if (!currentUserId || !currentChatId) { // user ID 또는 chat ID가 없으면 스케줄 로드 중단
-              console.warn('사용자/채팅방 ID가 없어 스케줄을 로드할 수 없습니다.');
-              document.getElementById('main-content').innerHTML = `
-                  <p style="text-align: center; color: #dc3545; margin-top: 50px;">
-                      사용자/채팅방 인증이 필요하거나 실패했습니다.
-                  </p>
-              `;
-              return;
-          }
-
-          updateMonthHeader();
-          const el = document.getElementById('main-content');
-          el.innerHTML = '';
-          const year = currentDate.getFullYear();
-          const month = currentDate.getMonth() + 1;
-          const start = `${year}-${String(month).padStart(2,'0')}-01`;
-          const end = `${year}-${String(month).padStart(2,'0')}-${String(getDaysInMonth(currentDate)).padStart(2,'0')}`;
-
-          try {
-              const res = await fetch(`${WORKER_API_BASE}/api/schedule?start=${start}&end=${end}`, {
-                  // 백엔드에서 사용자별 스케줄 로직이 필요한 경우, userId와 chatId를 헤더로 보낼 수 있습니다.
-                  headers: { 'X-User-Id': currentUserId, 'X-Chat-Id': currentChatId } 
-              });
-            
-              // 💥💥💥 스케줄 로딩 디버깅 로그 💥💥💥
-              const rawResponseText = await res.text();
-              console.log("DEBUG_SCHEDULE_RAW_RESPONSE:", rawResponseText);
-
-              if (!res.ok) {
-                  let errorMessage = '알 수 없는 서버 오류';
-                  try {
-                      const errorData = JSON.parse(rawResponseText);
-                      errorMessage = errorData.error || errorData.reason || errorMessage;
-                  } catch (e) { /* JSON 파싱 실패 시 그냥 텍스트 사용 */ }
-                  throw new Error(errorMessage);
-              }
-              const data = JSON.parse(rawResponseText); // rawResponseText를 JSON으로 파싱
-
-              console.log("DEBUG_SCHEDULE_PARSED_DATA:", data); // 파싱된 데이터 확인
-
-              if (!Array.isArray(data)) {
-                  throw new Error(data.error || '예상치 못한 데이터 형식: 배열이 아님');
-              }
-
-              // 렌더링
-              if (data.length > 0) {
-                  el.innerHTML = data.map(item => {
-                      const d = new Date(item.date); 
-                      // 백엔드 /api/schedule 응답 구조에 맞춰 item.day, item.night1, item.night2 입니다.
-                      const dutyDisplayData = {
-                          day: item.day,
-                          night1: item.night1,
-                          night2: item.night2,
-                          type: item.type // '주' '야' '비' 구분을 위해 type도 전달
-                      };
-                      return createDutyCard(d.getDate(), DAYS[d.getDay()], d, dutyDisplayData);
-                  }).join('');
-              } else {
-                  el.innerHTML = `<p style="text-align: center; margin-top: 50px;">해당 월의 스케줄이 없습니다.</p>`;
-              }
-              
-              if (scrollToToday) {
-                  scrollToTodayCard();
-              }
-
-          } catch (error) { 
-              console.error('스케줄 데이터를 불러오는 중 오류 발생:', error);
-              
-              const days = getDaysInMonth(currentDate);
-              let fallbackHtml = '';
-              for (let i = 1; i <= days; i++) {
-                  const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
-                  // 오류 발생 시에는 dutyData를 null로 전달하여 '스케줄 없음' 표시
-                  fallbackHtml += createDutyCard(i, DAYS[date.getDay()], date, null); 
-              }
-              el.innerHTML = fallbackHtml; 
-              showToast(`스케줄 데이터를 불러올 수 없습니다. (${error.message || "네트워크 오류"})`);
-          }
-      }
-
-      // '오늘' 버튼 클릭 시 실행 함수
-      function goToToday() {
-          currentDate = new Date(); 
-          renderSchedule(true); // 스크롤 플래그를 true로 전달
-      }
-
-      // =========================================================================
-      // ✅ 설정 모달 관련 함수 (기존 코드 유지)
-      // =========================================================================
-      // openSettingsModal, closeSettingsModal, saveDutyCycle, showToast 함수들은 변경 없이 기존 코드 그대로 유지합니다.
-      // 케이오님의 html 파일에 있던 내용들을 아래에 포함시켰습니다.
-
-      async function openSettingsModal() {
-        document.getElementById('settings-modal').style.display = 'flex';
-        try {
-            const res = await fetch(`${WORKER_API_BASE}/api/settings`);
-            const settings = await res.json();
-            if (settings.cycle) {
-                document.getElementById('duty-cycle').value = settings.cycle;
-            }
-            if (settings.baseDate) {
-                document.getElementById('duty-base-date').value = settings.baseDate.substring(0, 10);
-            }
-            if (settings.users && Array.isArray(settings.users)) {
-                document.getElementById('duty-users').value = settings.users.join(' ');
-            }
-        } catch (e) {
-            console.error('Failed to load settings:', e);
-            showToast('Failed to load settings.');
-        }
-      }
-
-      function closeSettingsModal() {
-          document.getElementById('settings-modal').style.display = 'none';
-      }
-
-      async function saveDutyCycle() {
-        const dutyCycle = document.getElementById('duty-cycle').value;
-        const dutyBaseDate = document.getElementById('duty-base-date').value;
-        const dutyUsers = document.getElementById('duty-users').value;
-        const usersArray = dutyUsers.split(' ').filter(u => u.trim() !== '');
-
-        try {
-            const res = await fetch(`${WORKER_API_BASE}/api/settings`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    cycle: dutyCycle,
-                    baseDate: dutyBaseDate,
-                    users: usersArray
-                })
-            });
-
-            if (res.ok) {
-                showToast('설정이 성공적으로 저장되었습니다!');
-                closeSettingsModal();
-                renderSchedule(); // 설정 변경 후 스케줄 새로고침
-            } else {
-                const errorData = await res.json();
-                showToast(`설정 저장 실패: ${errorData.error || res.statusText}`);
-            }
-        } catch (e) {
-            console.error('Failed to save settings:', e);
-            showToast('설정 저장 중 오류가 발생했습니다.');
-        }
-      }
-
-      
-      let toastTimeoutId = null; // 타이머 ID를 저장할 전역 변수      
-      function showToast(message, duration = 1000) {
-          let toast = document.getElementById('toast');
-          if (!toast) {
-              toast = document.createElement('div');
-              toast.id = 'toast';
-              document.body.appendChild(toast);
-          }
-      
-          // 💥💥💥 기존 타이머가 있다면 클리어 (토스트가 사라지지 않는 문제 해결 핵심!) 💥💥💥
-          if (toastTimeoutId) {
-              clearTimeout(toastTimeoutId);
-              toastTimeoutId = null;
-          }
-      
-          // 메시지 업데이트 및 보이도록 설정
-          toast.textContent = message;
-          toast.style.visibility = 'visible'; // 즉시 보이도록
-          toast.style.opacity = '1';          // 불투명하게 (CSS 트랜지션 시작)
-      
-          // 지정된 시간(duration) 후 토스트를 사라지게 하는 타이머 설정
-          toastTimeoutId = setTimeout(() => {
-              toast.style.opacity = '0'; // 투명하게 만듭니다 (CSS 트랜지션 시작)
-              // opacity 트랜지션이 완료될 시간을 기다린 후 요소를 완전히 숨깁니다.
-              // CSS transition의 duration과 동일하게 맞춥니다. (0.3s = 300ms)
-              setTimeout(() => {
-                  // 이 시점에 opacity가 0이 아니면 다른 토스트가 시작됐을 수 있으므로 확인
-                  if (toast.style.opacity === '0') { 
-                      toast.style.visibility = 'hidden'; // 완전히 숨김
-                  }
-                  toastTimeoutId = null; // 타이머 ID 초기화
-              }, 1000); // CSS transition-duration 값과 동일하게 설정
-          }, duration); // duration 후에 사라지기 시작 (3초 후)
-      }
-
-      
-      // 💥💥💥 스와이프 💥💥💥
-      
-      let touchStartX = 0;
-      const SWIPE_THRESHOLD = 80; // 스와이프로 인식할 최소 이동 거리 (픽셀)
-  
-      const scheduleContainer = document.querySelector('.container');
-  
-      scheduleContainer.addEventListener('touchstart', (e) => {
-          touchStartX = e.touches[0].clientX; // 터치 시작 지점의 X 좌표 저장
-      });
-  
-      scheduleContainer.addEventListener('touchend', (e) => {
-          const touchEndX = e.changedTouches[0].clientX; // 터치 끝 지점의 X 좌표
-          const deltaX = touchEndX - touchStartX; // X축 이동 거리 계산
-  
-          if (deltaX > SWIPE_THRESHOLD) {
-              prevMonth(); // 오른쪽으로 스와이프 (이전 달로 이동)
-          } else if (deltaX < -SWIPE_THRESHOLD) {
-              nextMonth(); // 왼쪽으로 스와이프 (다음 달로 이동)
-          처럼 }
-      });
-      // 💥💥💥 스와이프 끝 💥💥💥
-      
-    </script>
+     // 💥💥💥 web_app 대신 callback_data 버튼을 사용합니다! 💥💥💥
+     const buttons = [
+       [
+         // 첫 번째 클릭은 콜백 데이터 전송 (미니앱 바로 열리지 않음)
+         { text: '당직 미니앱 열기', callback_data: 'request_mini_app_access' }
+       ]
+     ];
+     // 💥 sendTelegramMessage 호출 시에는 currentChatId (봇이 알림을 보내는 대상 채팅방)를 사용
+     await sendTelegramMessage(env, dutyInfoFull.message, currentChatId, buttons);
+   } else {
+     console.log("시간/당직 조건 불충족 또는 '비번' (메시지 미발송):", "\n", dutyInfoFull.message, "\n", "hour", hour, "shouldSendMessage", shouldSendMessage, "\n", "dutyType.includes('야간')", dutyType.includes('야간'), "\n", nowKST.toISOString().slice(11,19), "DutyType:", dutyInfoFull.dutyType);
+   }
+ },
+};
