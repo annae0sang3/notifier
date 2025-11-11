@@ -506,7 +506,7 @@
           window.Telegram.WebApp.ready(); 
           
           // 💥💥💥 URL 쿼리 파라미터에서 user_id, chat_id, sig를 추출합니다! 💥💥💥
-          const urlParams = new URLSearchParams(window.location.search);
+          //const urlParams = new URLSearchParams(window.location.search);
           const userId = urlParams.get('user_id');
           const chatId = urlParams.get('chat_id');
           const signature = urlParams.get('sig'); // 보안 서명
