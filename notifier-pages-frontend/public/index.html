@@ -278,12 +278,12 @@
     </div>
 
 
-    <div id="telegram-info" style="padding: 16px; background: #eef; border-radius: 8px; margin: 16px; display: none;">
+    <!-- <div id="telegram-info" style="padding: 16px; background: #eef; border-radius: 8px; margin: 16px; display: none;">
       Telegram WebApp 정보 로딩 중...
-    </div>
+    </div> -->
     
     <!-- ❗ 인증 실패 시 메시지 표시 -->
-    <div id="access-denied" style="display:none; margin-top: 50px; color: #dc3545; font-weight:600;">
+    <div id="access-denied" margin-top: 50px; color: #dc3545; font-weight:600;">
       <!-- JavaScript에서 동적으로 내용 채움 -->
       <p>이 미니앱은 특정 텔레그램 단체방 멤버만 접근할 수 없습니다.</p>
     </div>
@@ -337,9 +337,8 @@
       <span>Settings</span>
     </a>
   </footer>
-
-    </div>
-    <script>
+  
+  <script>
       const DAYS = ['일', '월', '화', '수', '목', '금', '토']; 
       let currentDate = new Date(); 
       const WORKER_API_BASE = 'https://notifier-worker-backend.annae0sang3.workers.dev';
@@ -704,7 +703,7 @@
                   }
                   toastTimeoutId = null; // 타이머 ID 초기화
               }, 1000); // CSS transition-duration 값과 동일하게 설정
-          }, duration); // duration 후에 사라지기 시작 (3초 후)
+          }, duration); // ${duration}ms 후에 사라지기 시작
       }
       // 💥💥💥 스와이프 💥💥💥      
       let touchStartX = 0;
@@ -720,7 +719,7 @@
               prevMonth(); // 오른쪽으로 스와이프 (이전 달로 이동)
           } else if (deltaX < -SWIPE_THRESHOLD) {
               nextMonth(); // 왼쪽으로 스와이프 (다음 달로 이동)
-          처럼 }
+          }
       });
       // 💥💥💥 스와이프 끝 💥💥💥      
     </script>
