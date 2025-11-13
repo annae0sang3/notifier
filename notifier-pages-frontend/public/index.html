@@ -526,18 +526,30 @@
       function getDaysInMonth(date) {
           return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
       }
+    
       // 오늘의 날짜 카드에 스크롤합니다.
       function scrollToTodayCard() {
-          const todayCard = document.querySelector('.schedule-card.today');
-          const header = document.querySelector('.header'); 
-          if (todayCard && header) {
-              const headerHeight = header.offsetHeight; 
-              const targetScrollY = todayCard.offsetTop - headerHeight - 50;
-              window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
-          } else if (todayCard) {
-              todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
+        const todayCard = document.querySelector('.schedule-card.today');
+        const header = document.querySelector('.header');
+      
+        if (!todayCard) return; // 오늘 카드가 없으면 아무 동작 안 함
+      
+        // 현재 카드의 위치 정보
+        const cardRect = todayCard.getBoundingClientRect(); // 카드의 화면 내 상대 위치
+        const scrollY = window.scrollY || window.pageYOffset; // 현재 스크롤 위치
+      
+        // 중앙에 카드가 오도록 목표 스크롤 위치 계산
+        const viewportHeight = window.innerHeight;
+        const headerHeight = header ? header.offsetHeight : 0;
+        const targetScrollY = scrollY + cardRect.top - viewportHeight / 2 + todayCard.offsetHeight / 2 - headerHeight / 2;
+      
+        // 부드럽게 스크롤 이동
+        window.scrollTo({
+          top: targetScrollY,
+          behavior: 'smooth'
+        });
       }
+
       // 스케줄 카드를 생성합니다. 💥 백엔드 응답 형식에 맞춰 item.day, item.night1, item.night2로 수정했습니다.
       function createDutyCard(dayNum, dayName, dateObj, dutyData = null) {
         const today = new Date();
