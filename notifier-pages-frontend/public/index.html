@@ -350,6 +350,7 @@
       let currentChatId = null; // 💥 현재 미니앱이 열린 채팅방 ID 저장할 전역 변수
 
       document.addEventListener('DOMContentLoaded', async () => {
+        console.log("DEBUG: DOMContentLoaded Start"); // ✅ 이 로그가 콘솔에 찍히는지 확인
           const headerElement = document.querySelector('.header');
           const mainContentElement = document.getElementById('main-content');
           const footerNavElement = document.querySelector('.footer-nav');
@@ -368,6 +369,7 @@
               return;
           }
           // 텔레그램 WebApp 준비 완료 알림
+        console.log("DEBUG: Telegram WebApp is ready to proceed."); // ✅ 이 로그가 찍히는지 확인
           window.Telegram.WebApp.ready();           
           // 💥💥💥 URL 쿼리 파라미터에서 user_id, chat_id, sig를 추출합니다! 💥💥💥
           const urlParams = new URLSearchParams(window.location.search);
