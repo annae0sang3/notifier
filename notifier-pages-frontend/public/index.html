@@ -53,6 +53,7 @@
       font-weight: 600;
       color: #101922;
       margin: 0;
+      cursor: pointer; /* ⚛️ 연속 클릭 트리거를 위해 커서 스타일 추가 */
     }
     .schedule-list {
       padding: 0 16px;
@@ -191,23 +192,48 @@
       max-width: 450px;
       left: 50%;
       transform: translateX(-50%);
-      display: none;
+      display: flex; /* ⚛️ Footer는 항상 flex로 유지합니다. */
       justify-content: space-around;
       background-color: #fff;
       border-top: 1px solid #eee;
       box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
       z-index: 50;
     }
-    .footer-nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 8px 0;
-      text-decoration: none;
-      color: #6c757d;
-      font-size: 0.7rem;
-      flex: 1;
-    }
+    /* ⚛️ [여기부터] 설정 버튼 토글을 위한 CSS 수정 */
+    .footer-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 0;
+      text-decoration: none;
+      color: #6c757d;
+      font-size: 0.7rem;
+      transition: flex 0.3s ease, width 0.3s ease; /* 전환 효과 추가 */
+      overflow: hidden;
+    }
+    /* 기본 상태: Today(첫 번째 요소)는 100%를 차지 */
+    .footer-nav-item:nth-child(1) { /* Today 버튼 */
+      flex: 1; /* 남은 공간 모두 차지 */
+    }
+
+    /* 기본 상태: Settings(두 번째 요소)는 완전히 숨김 */
+    .footer-nav-item:nth-child(2) { /* Settings 버튼 */
+      display: none; /* Flexbox 레이아웃에서 완전히 제거 */
+      width: 0; /* 혹시 모를 너비도 0으로 설정 */
+    }
+
+    /* 활성화 상태: footer-nav에 .settings-active 클래스가 추가되었을 때 */
+    .footer-nav.settings-active .footer-nav-item:nth-child(1) { /* Today 버튼 */
+      flex: 7; /* 70% 비율 */
+    }
+
+    .footer-nav.settings-active .footer-nav-item:nth-child(2) { /* Settings 버튼 */
+      display: flex; /* 보이게 함 */
+      flex: 3; /* 30% 비율 */
+      width: auto; /* 너비 자동 설정 */
+    }
+    /* ⚛️ [여기까지] 설정 버튼 토글을 위한 CSS 수정 */
+    
     .footer-nav-item.active, .footer-nav-item:hover {
       color: #137fec;
     }
@@ -434,7 +460,45 @@
               accessDeniedDiv.style.display = 'block';
               // window.Telegram.WebApp.close();
           }
-      });
+          // 🔑 [START] 설정 버튼 토글 트리거 리스너 추가 (DOM이 로드된 후)
+          const currentMonthYearElement = document.getElementById('current-month-year');
+          if (currentMonthYearElement) {
+              let clickCount = 0;
+              let timer = null;
+              const requiredClicks = 5;
+              const resetTime = 1000;
+              
+              currentMonthYearElement.addEventListener('click', () => {
+                  clickCount++;
+                  if (timer) { clearTimeout(timer); }
+
+                  if (clickCount >= requiredClicks) {
+                      toggleSettingsVisibility(); // 💾 정의된 함수 호출
+                      clickCount = 0;
+                      clearTimeout(timer);
+                      timer = null;
+                      console.log("Secret settings visibility toggled!");
+                      return;
+                  }
+
+                  timer = setTimeout(() => {
+                      if (clickCount > 0) {
+                          clickCount = 0;
+                          console.log("Click sequence reset.");
+                      }
+                  }, resetTime);
+              });
+          }
+          // 🔑 [END] 설정 버튼 토글 트리거 리스너 추가
+      });
+
+      // 💾 [START] 설정 토글 함수 정의
+      function toggleSettingsVisibility() {
+          const footerNav = document.querySelector('.footer-nav');
+          // .settings-active 클래스를 추가/제거하여 CSS 비율을 변경합니다.
+          footerNav.classList.toggle('settings-active'); 
+      }
+      // 💾 [END] 설정 토글 함수 정의
 
       // 월/년 헤더를 업데이트합니다.
       function updateMonthHeader() {
@@ -519,7 +583,7 @@
                                 ${ (dutyData.night1 && dutyData.night2) ? `　` : '' } 
                                 ${dutyData.night2 || ''}
                             </span>
-                        ` : ''}
+                        ` : ''}  // 💥💥💥💥💥💥💥💥💥💥💥💥💥💥💥💥💥삭제해야 하나????💥💥💥💥💥
                     </div>
                 </div>
             `;
@@ -640,6 +704,11 @@
 
       function closeSettingsModal() {
           document.getElementById('settings-modal').style.display = 'none';
+          // 💾 설정 모달이 닫힐 때 settings-active 클래스를 제거 (버튼을 다시 숨김)
+          const footerNav = document.querySelector('.footer-nav');
+          if (footerNav.classList.contains('settings-active')) {
+              footerNav.classList.remove('settings-active');
+          }
       }
       async function saveDutyCycle() {
         const dutyCycle = document.getElementById('duty-cycle').value;
