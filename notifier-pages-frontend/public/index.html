@@ -184,6 +184,7 @@
     /* 호버 효과 (Mini App에서는 잘 사용되지 않지만, 웹뷰 표준을 위해 유지) */
     .button.save:hover { background-color: #0f6ed4; }
     .button.cancel:hover { background-color: #5c636a; }
+    
     /* Footer Nav */
     .footer-nav {
       position: fixed;
@@ -194,57 +195,56 @@
       transform: translateX(-50%);
       display: flex; /* ⚛️ Footer는 항상 flex로 유지합니다. */
       justify-content: space-around;
+      height: 60px;
+      align-items: center;
       background-color: #fff;
       border-top: 1px solid #eee;
       box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
       z-index: 50;
     }
-    /* ⚛️ [여기부터] 설정 버튼 토글을 위한 CSS 수정 */
-    .footer-nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 8px 0;
-      text-decoration: none;
-      color: #6c757d;
-      font-size: 0.7rem;
-      transition: flex 0.3s ease, width 0.3s ease, opacity 0.3s ease, padding 0.3s ease; /* 전환 효과 추가 */
-      overflow: hidden;
-    }
-    /* 기본 상태: Today(첫 번째 요소)는 100%를 차지 */
-    .footer-nav-item:nth-child(1) { /* Today 버튼 */
-      flex: 1; /* 남은 공간 모두 차지 */
-    }
 
-    /* 기본 상태: Settings(두 번째 요소)는 완전히 숨김 */
-    .footer-nav-item:nth-child(2) { /* Settings 버튼 */
-      flex: 0; /* flex-grow, flex-shrink, flex-basis 모두 0으로 설정 */
+    /* ⚙️ 설정 버튼 토글을 위한 CSS */
+    .footer-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 0;
+      text-decoration: none;
+      color: #6c757d;
+      font-size: 0.8rem;
+      transition: flex 0.3s ease, width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+      overflow: hidden;
+    }
+    
+    /* 기본 상태: Today만 보임 */
+    .footer-nav-item:nth-child(1) {
+      flex: 1;
+    }
+    .footer-nav-item:nth-child(2) {
+      flex: 0;
       width: 0;
-      padding-left: 0;
-      padding-right: 0;
-      opacity: 0; /* 부드러운 전환을 위해 투명도도 0으로 설정 */
-      pointer-events: none; /* 클릭 방지 */
+      /* padding-left: 0;
+      padding-right: 0; */
+      opacity: 0;
+      pointer-events: none;
     }
-
-    /* 활성화 상태: footer-nav에 .settings-active 클래스가 추가되었을 때 */
-    .footer-nav.settings-active .footer-nav-item:nth-child(1) { /* Today 버튼 */
-      flex: 7; /* 70% 비율 */
-    }
-
-    .footer-nav.settings-active .footer-nav-item:nth-child(2) { /* Settings 버튼 */
-      flex: 3; /* 30% 비율 */
+    
+    /* 활성화 시 Settings 버튼 노출 */
+    .footer-nav.settings-active .footer-nav-item:nth-child(1) {
+      flex: 7;
+    }
+    .footer-nav.settings-active .footer-nav-item:nth-child(2) {
+      flex: 3;
       width: auto;
-      padding: 8px 0; /* 원래 padding 값 복원 */
-      opacity: 1; /* 보이게 함 */
-      pointer-events: auto; /* 클릭 활성화 */
+      opacity: 1;
+      pointer-events: auto;
     }
-    /* ⚛️ [여기까지] 설정 버튼 토글을 위한 CSS 수정 */
     
     .footer-nav-item.active, .footer-nav-item:hover {
       color: #137fec;
     }
     .footer-nav-item span.material-icons {
-      font-size: 1.4rem;
+      font-size: 1.6rem;
     }
     @keyframes fadeIn {
       from { opacity: 0; } to { opacity: 1; }
