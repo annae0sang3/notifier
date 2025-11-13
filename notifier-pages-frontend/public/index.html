@@ -1,205 +1,206 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>On-Call Schedule</title>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Inter', 'SF Pro Display', sans-serif;
-      margin: 0;
-      background-color: #f6f7f8;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      padding-bottom: 60px;
-      text-align: center;
-    }
-    .container {
-      max-width: 450px;
-      width: 100%;
-      margin: 0 auto;
-      flex-grow: 1;
-    }
-    .header {
-      padding: 15px 16px 10px 16px;
-      position: sticky;
-      top: 0;
-      background-color: #f6f7f8;
-      z-index: 10;
-    }
-    .header h1 {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #101922;
-      margin: 0 0 15px;
-    }
-    .month-selector {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-    }
-    .month-selector .arrow {
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #6c757d;
-    }
-    .month-selector h2 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #101922;
-      margin: 0;
-      cursor: pointer; /* ⚛️ 연속 클릭 트리거를 위해 커서 스타일 추가 */
-    }
-    .schedule-list {
-      padding: 0 16px;
-      margin-bottom: 20px;
-    }
-    .schedule-card {
-      background-color: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
-      margin-bottom: 8px;
-      padding: 8px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }    
-    /* 오늘 날짜 카드 강조 */
-    .schedule-card.today {
-      border: 2px solid #137fec;
-      box-shadow: 0 2px 8px rgba(19, 127, 236, 0.2);
-    }    
-    .card-date {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 70px;
-      position: relative;
-    }
-    .day-num {
-      font-weight: 500;
-      font-size: 1.1rem;
-      color: #101922;
-    }
-    .day-name {
-      font-size: 0.95rem;
-      color: #6c757d;
-    }
-    /* 주말 색상 */
-    .day-name.weekend-sat { color: #137fec; }
-    .day-name.weekend-sun { color: #dc3545; }
-    /* 근무 타입 아이콘 위치 조정 (수직 중앙 정렬) */
-    .duty-icon {
-      position: absolute;
-      top: 50%; /* 상단 50% 위치 */
-      transform: translateY(-50%); /* 아이콘 높이의 50%만큼 위로 이동 */
-      left: -2px; /* 좌측에서 조금 우측으로 이동 */
-      font-size: 1.1rem;
-      transition: color 0.2s;
-    }
-    .day-icon { left: 3px; color: #ffc107; }
-    .night-icon { left: 3px; color: #4a5482; }
-    .mixed-icon { left: 3px; color: #f96d00; }
-    /* 당직자 열 정렬 */
-    .card-duties {
-      flex-grow: 1;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-left: 1px solid #eee;
-      padding-left: 1px; /* 주간당직자를 오른쪽으로 띄우기 */
-      color: #555;
-      font-size: 1.0rem;
-    }
-    .day-duty-col {
-      flex: 4;
-      text-align: center; /* 주간 당직자 중앙 정렬 유지 */
-      font-weight: 500;
-    }
-    .night-duty-col {
-      flex: 6;
-      text-align: center; /* 야간 당직자를 중앙쪽으로 이동 */
-      font-weight: 500;
-    }
-    /* ---------- Settings Modal / Toast / Footer ---------- */
-    #settings-modal {
-      display: none; position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(3px);
-      justify-content: center; align-items: center; z-index: 1000;
-      animation: fadeIn 0.25s ease-out;
-    }
-    #settings-modal .modal-content {
-      background: #fff; border-radius: 18px; width: 92%; max-width: 380px;
-      padding: 24px 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-      animation: scaleUp 0.25s ease-out; position: relative; text-align: left;
-      box-sizing: border-box;
-    }
-    /* ... (Modal input, button styles) ... */
-    #settings-modal input {
-      width: calc(100% - 4px); /* 💡 width 수정 (패딩 고려) */
-      box-sizing: border-box;
-      padding: 9px 10px;
-      font-size: 1rem;
-      border-radius: 8px; /* 메인 디자인과 통일성 */
-      border: 1px solid #ddd;
-      background-color: #f7f8fa; /* 배경색을 연하게 */
-      margin-top: 20px;
-      margin-bottom: 30px;
-      transition: all 0.2s;
-    }
-    #settings-modal input:focus {
-      border-color: #137fec; /* 포커스 시 강조 색상 */
-      background-color: #fff;
-      outline: none;
-    }    
-    .modal-buttons {
-      display: flex;
-      justify-content: flex-end; /* 오른쪽으로 배치 */
-      gap: 10px;
-      margin-top: 24px;
-    }
-    .button {
-      border: none;
-      border-radius: 8px; /* 모서리 통일 */
-      padding: 10px 16px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-    }
-    .button.save {
-      background-color: #137fec; /* 메인 강조 색상 */
-      color: #fff;
-    }
-    .button.cancel {
-      background-color: #6c757d; /* 회색 톤 */
-      color: #fff;
-    }
-    /* 호버 효과 (Mini App에서는 잘 사용되지 않지만, 웹뷰 표준을 위해 유지) */
-    .button.save:hover { background-color: #0f6ed4; }
-    .button.cancel:hover { background-color: #5c636a; }
-    /* Footer Nav */
-    .footer-nav {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      max-width: 450px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex; /* ⚛️ Footer는 항상 flex로 유지합니다. */
-      justify-content: space-around;
-      background-color: #fff;
-      border-top: 1px solid #eee;
-      box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
-      z-index: 50;
-    }
-    /* ⚛️ [여기부터] 설정 버튼 토글을 위한 CSS 수정 */
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>On-Call Schedule</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', 'SF Pro Display', sans-serif;
+      margin: 0;
+      background-color: #f6f7f8;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding-bottom: 60px;
+      text-align: center;
+    }
+    .container {
+      max-width: 450px;
+      width: 100%;
+      margin: 0 auto;
+      flex-grow: 1;
+    }
+    .header {
+      padding: 15px 16px 10px 16px;
+      position: sticky;
+      top: 0;
+      background-color: #f6f7f8;
+      z-index: 10;
+    }
+    .header h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #101922;
+      margin: 0 0 15px;
+    }
+    .month-selector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+    .month-selector .arrow {
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #6c757d;
+    }
+    .month-selector h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #101922;
+      margin: 0;
+      cursor: pointer; /* ⚛️ 연속 클릭 트리거를 위해 커서 스타일 추가 */
+    }
+    .schedule-list {
+      padding: 0 16px;
+      margin-bottom: 20px;
+    }
+    .schedule-card {
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+      margin-bottom: 8px;
+      padding: 8px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }    
+    /* 오늘 날짜 카드 강조 */
+    .schedule-card.today {
+      border: 2px solid #137fec;
+      box-shadow: 0 2px 8px rgba(19, 127, 236, 0.2);
+    }    
+    .card-date {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 70px;
+      position: relative;
+    }
+    .day-num {
+      font-weight: 500;
+      font-size: 1.1rem;
+      color: #101922;
+    }
+    .day-name {
+      font-size: 0.95rem;
+      color: #6c757d;
+    }
+    /* 주말 색상 */
+    .day-name.weekend-sat { color: #137fec; }
+    .day-name.weekend-sun { color: #dc3545; }
+    /* 근무 타입 아이콘 위치 조정 (수직 중앙 정렬) */
+    .duty-icon {
+      position: absolute;
+      top: 50%; /* 상단 50% 위치 */
+      transform: translateY(-50%); /* 아이콘 높이의 50%만큼 위로 이동 */
+      left: -2px; /* 좌측에서 조금 우측으로 이동 */
+      font-size: 1.1rem;
+      transition: color 0.2s;
+    }
+    .day-icon { left: 3px; color: #ffc107; }
+    .night-icon { left: 3px; color: #4a5482; }
+    .mixed-icon { left: 3px; color: #f96d00; }
+    /* 당직자 열 정렬 */
+    .card-duties {
+      flex-grow: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 1px solid #eee;
+      padding-left: 1px; /* 주간당직자를 오른쪽으로 띄우기 */
+      color: #555;
+      font-size: 1.0rem;
+    }
+    .day-duty-col {
+      flex: 4;
+      text-align: center; /* 주간 당직자 중앙 정렬 유지 */
+      font-weight: 500;
+    }
+    .night-duty-col {
+      flex: 6;
+      text-align: center; /* 야간 당직자를 중앙쪽으로 이동 */
+      font-weight: 500;
+    }
+    /* ---------- Settings Modal / Toast / Footer ---------- */
+    #settings-modal {
+      display: none; position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(3px);
+      justify-content: center; align-items: center; z-index: 1000;
+      animation: fadeIn 0.25s ease-out;
+    }
+    #settings-modal .modal-content {
+      background: #fff; border-radius: 18px; width: 92%; max-width: 380px;
+      padding: 24px 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      animation: scaleUp 0.25s ease-out; position: relative; text-align: left;
+      box-sizing: border-box;
+    }
+    /* ... (Modal input, button styles) ... */
+    #settings-modal input {
+      width: calc(100% - 4px); /* 💡 width 수정 (패딩 고려) */
+      box-sizing: border-box;
+      padding: 9px 10px;
+      font-size: 1rem;
+      border-radius: 8px; /* 메인 디자인과 통일성 */
+      border: 1px solid #ddd;
+      background-color: #f7f8fa; /* 배경색을 연하게 */
+      margin-top: 20px;
+      margin-bottom: 30px;
+      transition: all 0.2s;
+    }
+    #settings-modal input:focus {
+      border-color: #137fec; /* 포커스 시 강조 색상 */
+      background-color: #fff;
+      outline: none;
+    }    
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end; /* 오른쪽으로 배치 */
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .button {
+      border: none;
+      border-radius: 8px; /* 모서리 통일 */
+      padding: 10px 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .button.save {
+      background-color: #137fec; /* 메인 강조 색상 */
+      color: #fff;
+    }
+    .button.cancel {
+      background-color: #6c757d; /* 회색 톤 */
+      color: #fff;
+    }
+    /* 호버 효과 (Mini App에서는 잘 사용되지 않지만, 웹뷰 표준을 위해 유지) */
+    .button.save:hover { background-color: #0f6ed4; }
+    .button.cancel:hover { background-color: #5c636a; }
+    
+    /* Footer Nav */
+    .footer-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      max-width: 450px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex; /* ⚛️ Footer는 항상 flex로 유지합니다. */
+      justify-content: space-around;
+      background-color: #fff;
+      border-top: 1px solid #eee;
+      box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
+      z-index: 50;
+    }
+    
+    /* ⚛️ [START] 설정 버튼 토글을 위한 CSS 수정 */
     .footer-nav-item {
       display: flex;
       flex-direction: column;
@@ -211,7 +212,8 @@
       transition: flex 0.3s ease, width 0.3s ease; /* 전환 효과 추가 */
       overflow: hidden;
     }
-    /* 기본 상태: Today(첫 번째 요소)는 100%를 차지 */
+
+    /* 기본 상태: Today(첫 번째 요소)는 100%를 차지 */
     .footer-nav-item:nth-child(1) { /* Today 버튼 */
       flex: 1; /* 남은 공간 모두 차지 */
     }
@@ -232,234 +234,222 @@
       flex: 3; /* 30% 비율 */
       width: auto; /* 너비 자동 설정 */
     }
-    /* ⚛️ [여기까지] 설정 버튼 토글을 위한 CSS 수정 */
-    
-    .footer-nav-item.active, .footer-nav-item:hover {
-      color: #137fec;
-    }
-    .footer-nav-item span.material-icons {
-      font-size: 1.4rem;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; } to { opacity: 1; }
-    }
-    @keyframes scaleUp {
-      from { transform: scale(0.95); opacity: 0.8; }
-      to { transform: scale(1); opacity: 1; }
-    }
-    
-    /* 아이콘과 텍스트를 감싸는 그룹을 Flex 컨테이너로 만듦 */
-    .icon-text-group {
-      display: flex;         /* 이 요소를 Flexbox 컨테이너로 설정 */
-      align-items: center;   /* 자식 요소들(아이콘, 텍스트)을 세로축(교차축) 중앙에 정렬 */
-      gap: 8px;              /* 자식 요소들 사이에 8px의 간격 */
-      margin-bottom: 5px;    /* 다음 입력 필드와의 간격 조정 (필요시) */
-      /* H2나 Label의 기본 margin이 있을 수 있으니 초기화 */
-    }
-    .icon-text-group h2,
-    .icon-text-group label {
-      margin: 0;             /* h2와 label의 기본 마진을 없애서 flexbox 정렬에 방해되지 않도록 함 */
-      line-height: 1.2;      /* 텍스트의 라인 높이 조절 (취향에 따라) */
-    }
+    /* ⚛️ [END] 설정 버튼 토글을 위한 CSS 수정 */
 
-    /* 설정 제목 아이콘과 텍스트 그룹 (옵션) */
-    .icon-text-group.header-group {
-        /* 필요하면 설정 제목 부분에만 추가적인 스타일 적용 가능 */
-        margin-top: 10px; /* 상단 여백 추가 등 */
-    }
-    #access-denied {
-      display: none; /* 💥💥💥 초기에는 display: none;으로 숨김 💥💥💥 */
-      margin-top: 50px; 
-      color: #dc3545; 
-      font-weight:600;
-    }
-    #toast {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);        
-        background-color: rgba(0, 0, 0, 0.75);
-        color: white;
-        padding: 12px 24px;
-        border-radius: 25px;
-        z-index: 1000;        
-        /* 💥💥💥 이 상태로 유지! 💥💥💥 */
-        opacity: 0;
-        visibility: hidden; 
-        transition: opacity 1.0s ease-in-out;         
-        font-size: 1.0em;
-        white-space: nowrap;
-    }
-  </style>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    .footer-nav-item.active, .footer-nav-item:hover {
+      color: #137fec;
+    }
+    .footer-nav-item span.material-icons {
+      font-size: 1.4rem;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+    @keyframes scaleUp {
+      from { transform: scale(0.95); opacity: 0.8; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    
+    /* 아이콘과 텍스트를 감싸는 그룹을 Flex 컨테이너로 만듦 */
+    .icon-text-group {
+      display: flex;         /* 이 요소를 Flexbox 컨테이너로 설정 */
+      align-items: center;   /* 자식 요소들(아이콘, 텍스트)을 세로축(교차축) 중앙에 정렬 */
+      gap: 8px;              /* 자식 요소들 사이에 8px의 간격 */
+      margin-bottom: 5px;    /* 다음 입력 필드와의 간격 조정 (필요시) */
+      /* H2나 Label의 기본 margin이 있을 수 있으니 초기화 */
+    }
+    .icon-text-group h2,
+    .icon-text-group label {
+      margin: 0;             /* h2와 label의 기본 마진을 없애서 flexbox 정렬에 방해되지 않도록 함 */
+      line-height: 1.2;      /* 텍스트의 라인 높이 조절 (취향에 따라) */
+    }
+
+    /* 설정 제목 아이콘과 텍스트 그룹 (옵션) */
+    .icon-text-group.header-group {
+        /* 필요하면 설정 제목 부분에만 추가적인 스타일 적용 가능 */
+        margin-top: 10px; /* 상단 여백 추가 등 */
+    }
+    #access-denied {
+      display: none; /* 💥💥💥 초기에는 display: none;으로 숨김 💥💥💥 */
+      margin-top: 50px; 
+      color: #dc3545; 
+      font-weight:600;
+    }
+    #toast {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);        
+        background-color: rgba(0, 0, 0, 0.75);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 25px;
+        z-index: 1000;        
+        /* 💥💥💥 이 상태로 유지! 💥💥💥 */
+        opacity: 0;
+        visibility: hidden; 
+        transition: opacity 1.0s ease-in-out;         
+        font-size: 1.0em;
+        white-space: nowrap;
+    }
+  </style>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <div class="month-selector">
-        <span class="arrow material-icons" onclick="prevMonth()">chevron_left</span>
-        <h2 id="current-month-year">2025년 10월</h2>
-        <span class="arrow material-icons" onclick="nextMonth()">chevron_right</span>
-      </div>
-    </div>
+  <div class="container">
+    <div class="header">
+      <div class="month-selector">
+        <span class="arrow material-icons" onclick="prevMonth()">chevron_left</span>
+        <h2 id="current-month-year">2025년 10월</h2>         <span class="arrow material-icons" onclick="nextMonth()">chevron_right</span>
+      </div>
+    </div>
 
 
-    <div id="telegram-info" style="padding: 16px; background: #eef; border-radius: 8px; margin: 16px; display: none;">
-      Telegram WebApp 정보 로딩 중...
-    </div>
-    
-    <!-- ❗ 인증 실패 시 메시지 표시 -->
-    <div id="access-denied" margin-top: 50px; color: #dc3545; font-weight:600;">
-      <!-- JavaScript에서 동적으로 내용 채움 -->
-      <p>이 미니앱은 특정 텔레그램 단체방 멤버만 접근할 수 없습니다.</p>
-    </div>
+    <div id="telegram-info" style="padding: 16px; background: #eef; border-radius: 8px; margin: 16px; display: none;">
+      Telegram WebApp 정보 로딩 중...
+    </div>
+    
+        <div id="access-denied" margin-top: 50px; color: #dc3545; font-weight:600;">
+            <p>이 미니앱은 특정 텔레그램 단체방 멤버만 접근할 수 없습니다.</p>
+    </div>
 
-    <div id="main-content" class="schedule-list"></div>
+    <div id="main-content" class="schedule-list"></div>
 
-    <div id="settings-modal">
-      <div class="modal-content">
-        <!-- <div class="icon-text-group header-group"> <
-          <span class="material-icons-outlined">settings</span>
-          <h2>설정</h2>
-        </div> -->
+    <div id="settings-modal">
+      <div class="modal-content">
+                <div class="icon-text-group">           <span class="material-icons">wb_sunny</span>
+          <label for="duty-cycle">근무 주기 (공백으로 구분)</label>
+        </div>
+        <input id="duty-cycle" type="text" placeholder="예: 주 주 야 야 비 비">
 
-        <!-- <span class="material-icons close-icon" onclick="closeSettingsModal()">close</span> 닫기 버튼은 따로 둠 -->
+        <div class="icon-text-group">           <span class="material-icons">flag</span>
+          <label for="duty-base-date">기준일 (첫 번째 주간 근무일)</label>
+        </div>
+        <input id="duty-base-date" type="date">
 
-        <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
-          <span class="material-icons">wb_sunny</span>
-          <label for="duty-cycle">근무 주기 (공백으로 구분)</label>
-        </div>
-        <input id="duty-cycle" type="text" placeholder="예: 주 주 야 야 비 비">
+        <div class="icon-text-group">           <span class="material-icons">group</span>
+          <label for="duty-users">근무자 명단 (공백으로 구분)</label>
+        </div>
+        <input id="duty-users" type="text" placeholder="예: 홍길동 김철수 이영희">
 
-        <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
-          <span class="material-icons">flag</span>
-          <label for="duty-base-date">기준일 (첫 번째 주간 근무일)</label>
-        </div>
-        <input id="duty-base-date" type="date">
+        <div class="modal-buttons">
+          <button class="button cancel" onclick="closeSettingsModal()">닫기</button>
+          <button class="button save" onclick="saveDutyCycle()">저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        <div class="icon-text-group"> <!-- 아이콘과 label을 감쌈 -->
-          <span class="material-icons">group</span>
-          <label for="duty-users">근무자 명단 (공백으로 구분)</label>
-        </div>
-        <input id="duty-users" type="text" placeholder="예: 홍길동 김철수 이영희">
+  <div id="toast"></div>
 
-        <div class="modal-buttons">
-          <button class="button cancel" onclick="closeSettingsModal()">닫기</button>
-          <button class="button save" onclick="saveDutyCycle()">저장</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <footer class="footer-nav">
+    <a class="footer-nav-item" href="#" onclick="goToToday(); return false;">
+      <span class="material-icons">today</span>
+      <span>Today</span>
+    </a>
+    <a class="footer-nav-item" href="#" onclick="openSettingsModal(); return false;">
+      <span class="material-icons">settings</span>
+      <span>Settings</span>
+    </a>
+  </footer>
+  
+  <script>
+      const DAYS = ['일', '월', '화', '수', '목', '금', '토']; 
+      let currentDate = new Date(); 
+      const WORKER_API_BASE = 'https://notifier-worker-backend.annae0sang3.workers.dev';
 
-  <div id="toast"></div>
+      // =========================================================================
+      // ✅ 텔레그램 WebApp 및 사용자 검증 로직 (URL 파라미터 기반으로 변경)
+      // =========================================================================
+      let currentUserId = null; // 💥 검증된 사용자 ID를 저장할 전역 변수
+      let currentChatId = null; // 💥 현재 미니앱이 열린 채팅방 ID 저장할 전역 변수
 
-  <footer class="footer-nav">
-    <a class="footer-nav-item" href="#" onclick="goToToday(); return false;">
-      <span class="material-icons">today</span>
-      <span>Today</span>
-    </a>
-    <a class="footer-nav-item" href="#" onclick="openSettingsModal(); return false;">
-      <span class="material-icons">settings</span>
-      <span>Settings</span>
-    </a>
-  </footer>
-  
-  <script>
-      const DAYS = ['일', '월', '화', '수', '목', '금', '토']; 
-      let currentDate = new Date(); 
-      const WORKER_API_BASE = 'https://notifier-worker-backend.annae0sang3.workers.dev';
+      document.addEventListener('DOMContentLoaded', async () => {
+        console.log("DEBUG: DOMContentLoaded Start"); // ✅ 이 로그가 콘솔에 찍히는지 확인
+          const headerElement = document.querySelector('.header');
+          const mainContentElement = document.getElementById('main-content');
+          const footerNavElement = document.querySelector('.footer-nav');
+          const telegramInfoDiv = document.getElementById('telegram-info');
+          const accessDeniedDiv = document.getElementById('access-denied');
+          // 초기 UI 숨기기
+          headerElement.style.display = 'none';
+          mainContentElement.style.display = 'none';
+          footerNavElement.style.display = 'none';
+          telegramInfoDiv.style.display = 'none'; // 초기 정보창도 숨김
+          // 텔레그램 WebApp 스크립트 로드 여부 및 존재 여부 확인
+          if (typeof Telegram === 'undefined' || !window.Telegram.WebApp) {
+              console.log('❌ 텔레그램 미니앱 환경이 아닙니다. 일반 웹페이지로 열렸습니다.');
+              accessDeniedDiv.querySelector('p').textContent = '이 앱은 텔레그램 미니앱 환경에서만 동작합니다.';
+              accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
+              return;
+          }
+          // 텔레그램 WebApp 준비 완료 알림
+        console.log("DEBUG: Telegram WebApp is ready to proceed."); // ✅ 이 로그가 찍히는지 확인
+          window.Telegram.WebApp.ready();           
+          // 💥💥💥 URL 쿼리 파라미터에서 user_id, chat_id, sig를 추출합니다! 💥💥💥
+          const urlParams = new URLSearchParams(window.location.search);
+          const userId = urlParams.get('user_id');
+          const chatId = urlParams.get('chat_id');
+          const signature = urlParams.get('sig'); // 보안 서명
+          console.log(`DEBUG_PARAMS: userId=${userId}, chatId=${chatId}, signature=${signature}`);
+        
+          const tg = window.Telegram.WebApp;
+          console.log("initData:", tg.initData);
+          console.log("initDataUnsafe:", tg.initDataUnsafe);        
+          console.log(`DEBUG_PAGES_FETCH_URL: ${WORKER_API_BASE}/verify_params`);
 
-      // =========================================================================
-      // ✅ 텔레그램 WebApp 및 사용자 검증 로직 (URL 파라미터 기반으로 변경)
-      // =========================================================================
-      let currentUserId = null; // 💥 검증된 사용자 ID를 저장할 전역 변수
-      let currentChatId = null; // 💥 현재 미니앱이 열린 채팅방 ID 저장할 전역 변수
+          if (!userId || !chatId || !signature) {
+              console.error('❌ URL 파라미터에 user_id, chat_id 또는 sig가 누락되었습니다.');
+              accessDeniedDiv.querySelector('p').textContent = '에러: 필수 정보가 누락되어 인증할 수 없습니다.';
+              accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
+              return;
+          }
 
-      document.addEventListener('DOMContentLoaded', async () => {
-        console.log("DEBUG: DOMContentLoaded Start"); // ✅ 이 로그가 콘솔에 찍히는지 확인
-          const headerElement = document.querySelector('.header');
-          const mainContentElement = document.getElementById('main-content');
-          const footerNavElement = document.querySelector('.footer-nav');
-          const telegramInfoDiv = document.getElementById('telegram-info');
-          const accessDeniedDiv = document.getElementById('access-denied');
-          // 초기 UI 숨기기
-          headerElement.style.display = 'none';
-          mainContentElement.style.display = 'none';
-          footerNavElement.style.display = 'none';
-          telegramInfoDiv.style.display = 'none'; // 초기 정보창도 숨김
-          // 텔레그램 WebApp 스크립트 로드 여부 및 존재 여부 확인
-          if (typeof Telegram === 'undefined' || !window.Telegram.WebApp) {
-              console.log('❌ 텔레그램 미니앱 환경이 아닙니다. 일반 웹페이지로 열렸습니다.');
-              accessDeniedDiv.querySelector('p').textContent = '이 앱은 텔레그램 미니앱 환경에서만 동작합니다.';
-              accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
-              return;
-          }
-          // 텔레그램 WebApp 준비 완료 알림
-        console.log("DEBUG: Telegram WebApp is ready to proceed."); // ✅ 이 로그가 찍히는지 확인
-          window.Telegram.WebApp.ready();           
-          // 💥💥💥 URL 쿼리 파라미터에서 user_id, chat_id, sig를 추출합니다! 💥💥💥
-          const urlParams = new URLSearchParams(window.location.search);
-          const userId = urlParams.get('user_id');
-          const chatId = urlParams.get('chat_id');
-          const signature = urlParams.get('sig'); // 보안 서명
-          console.log(`DEBUG_PARAMS: userId=${userId}, chatId=${chatId}, signature=${signature}`);
-        
-          const tg = window.Telegram.WebApp;
-          console.log("initData:", tg.initData);
-          console.log("initDataUnsafe:", tg.initDataUnsafe);        
-          console.log(`DEBUG_PAGES_FETCH_URL: ${WORKER_API_BASE}/verify_params`);
+          console.log(`URL Params from Frontend: userId=${userId}, chatId=${chatId}, signature=${signature}`);
 
-          if (!userId || !chatId || !signature) {
-              console.error('❌ URL 파라미터에 user_id, chat_id 또는 sig가 누락되었습니다.');
-              accessDeniedDiv.querySelector('p').textContent = '에러: 필수 정보가 누락되어 인증할 수 없습니다.';
-              accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화
-              return;
-          }
+          try {
+              // 💥💥💥 Pages에서 Workers로 전송할 JSON 바디를 미리 찍어봅니다. 💥💥💥
+              const bodyToSend = JSON.stringify({ userId, chatId, signature });
+              console.log("DEBUG_PAGES_BODY_TO_SEND:", bodyToSend); 
+              console.log("DEBUG_PAGES_FETCH_URL:", `${WORKER_API_BASE}/verify_params`);
+            
+              // 백엔드 Workers의 '/verify_params' 엔드포인트로 추출한 정보를 전송하여 사용자 검증
+              const response = await fetch(`${WORKER_API_BASE}/verify_params`, { 
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId, chatId, signature }), 
+              });
 
-          console.log(`URL Params from Frontend: userId=${userId}, chatId=${chatId}, signature=${signature}`);
+              const verificationResult = await response.json();
 
-          try {
-              // 💥💥💥 Pages에서 Workers로 전송할 JSON 바디를 미리 찍어봅니다. 💥💥💥
-              const bodyToSend = JSON.stringify({ userId, chatId, signature });
-              console.log("DEBUG_PAGES_BODY_TO_SEND:", bodyToSend); 
-              console.log("DEBUG_PAGES_FETCH_URL:", `${WORKER_API_BASE}/verify_params`);
-            
-              // 백엔드 Workers의 '/verify_params' 엔드포인트로 추출한 정보를 전송하여 사용자 검증
-              const response = await fetch(`${WORKER_API_BASE}/verify_params`, { 
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId, chatId, signature }), 
-              });
+              if (verificationResult.ok) {       // ✅ 검증 성공 시                  
+                  const user = verificationResult.user || {};                  
+                  currentUserId = userId; // 💥 전역 변수에 저장
+                  currentChatId = chatId; // 💥 전역 변수에 저장
+                  console.log(`✓ 인증 완료! 사용자 ID: ${userId}, 그룹 ID: ${chatId}`);  
+                
+                  accessDeniedDiv.style.display = 'none'; // 접근 거부 메시지는 숨김 (혹시 초기 display:block 설정되어 있을 경우 대비)
 
-              const verificationResult = await response.json();
-
-              if (verificationResult.ok) {       // ✅ 검증 성공 시                  
-                  const user = verificationResult.user || {};                  
-                  currentUserId = userId; // 💥 전역 변수에 저장
-                  currentChatId = chatId; // 💥 전역 변수에 저장
-                  console.log(`✓ 인증 완료! 사용자 ID: ${userId}, 그룹 ID: ${chatId}`);  
-                
-                  accessDeniedDiv.style.display = 'none'; // 접근 거부 메시지는 숨김 (혹시 초기 display:block 설정되어 있을 경우 대비)
-
-                  // ✅ 검증 통과 후 미니앱의 주요 UI 요소들을 보이게 함
-                  headerElement.style.display = 'block';
-                  mainContentElement.style.display = 'block';
-                  footerNavElement.style.display = 'flex'; // footer-nav는 flex로 설정되어 있으므로
-                  
-                  goToToday(); // 오늘 날짜 스케줄 로드 시작
-              } else {
-                  // ❌ 검증 실패 시
-                  console.error('❌ 사용자 검증 실패:', verificationResult.reason);
-                  accessDeniedDiv.querySelector('p').textContent = `🚨 인증 실패: ${verificationResult.reason}`;
-                  accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화                  
-                  // window.Telegram.WebApp.close();   // 텔레그램 Web App 닫기 (선택 사항)
-              }
-          } catch (error) {
-              console.error('❌ 사용자 검증 중 통신 오류:', error);
-              accessDeniedDiv.querySelector('p').textContent = `🚨 인증 중 네트워크 오류: ${error.message}`;
-              accessDeniedDiv.style.display = 'block';
-              // window.Telegram.WebApp.close();
-          }
+                  // ✅ 검증 통과 후 미니앱의 주요 UI 요소들을 보이게 함
+                  headerElement.style.display = 'block';
+                  mainContentElement.style.display = 'block';
+                  footerNavElement.style.display = 'flex'; // footer-nav는 flex로 설정되어 있으므로
+                  
+                  goToToday(); // 오늘 날짜 스케줄 로드 시작
+              } else {
+                  // ❌ 검증 실패 시
+                  console.error('❌ 사용자 검증 실패:', verificationResult.reason);
+                  accessDeniedDiv.querySelector('p').textContent = `🚨 인증 실패: ${verificationResult.reason}`;
+                  accessDeniedDiv.style.display = 'block'; // 접근 거부 메시지 활성화                  
+                  // window.Telegram.WebApp.close();   // 텔레그램 Web App 닫기 (선택 사항)
+              }
+          } catch (error) {
+              console.error('❌ 사용자 검증 중 통신 오류:', error);
+              accessDeniedDiv.querySelector('p').textContent = `🚨 인증 중 네트워크 오류: ${error.message}`;
+              accessDeniedDiv.style.display = 'block';
+              // window.Telegram.WebApp.close();
+          }
           // 🔑 [START] 설정 버튼 토글 트리거 리스너 추가 (DOM이 로드된 후)
           const currentMonthYearElement = document.getElementById('current-month-year');
           if (currentMonthYearElement) {
@@ -499,298 +489,296 @@
           footerNav.classList.toggle('settings-active'); 
       }
       // 💾 [END] 설정 토글 함수 정의
+      
+      // 월/년 헤더를 업데이트합니다.
+      function updateMonthHeader() {
+          const options = { year: 'numeric', month: 'long' };
+          document.getElementById('current-month-year').textContent = currentDate.toLocaleString('ko-KR', options);
+      }
+      // 월 변경 (이전 달)
+      function prevMonth() {
+          currentDate.setMonth(currentDate.getMonth() - 1);
+          renderSchedule();
+          showToast(`${currentDate.getFullYear()}년 ${currentDate.getMonth() + 1}월`);
+      }
+      // 월 변경 (다음 달)
+      function nextMonth() {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          renderSchedule();
+          showToast(`${currentDate.getFullYear()}년 ${currentDate.getMonth() + 1}월`);
+      }
+      // 월의 마지막 날짜를 가져옵니다.
+      function getDaysInMonth(date) {
+          return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+      }
+      // 오늘의 날짜 카드에 스크롤합니다.
+      function scrollToTodayCard() {
+          const todayCard = document.querySelector('.schedule-card.today');
+          const header = document.querySelector('.header'); 
+          if (todayCard && header) {
+              const headerHeight = header.offsetHeight; 
+              const targetScrollY = todayCard.offsetTop - headerHeight - 30;
+              window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
+          } else if (todayCard) {
+              todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+      }
+      // 스케줄 카드를 생성합니다. 💥 백엔드 응답 형식에 맞춰 item.day, item.night1, item.night2로 수정했습니다.
+      function createDutyCard(dayNum, dayName, dateObj, dutyData = null) {
+        const today = new Date();
+        const isToday = dateObj.getDate() === today.getDate() &&
+                        dateObj.getMonth() === today.getMonth() &&
+                        dateObj.getFullYear() === today.getFullYear();
 
-      // 월/년 헤더를 업데이트합니다.
-      function updateMonthHeader() {
-          const options = { year: 'numeric', month: 'long' };
-          document.getElementById('current-month-year').textContent = currentDate.toLocaleString('ko-KR', options);
-      }
-      // 월 변경 (이전 달)
-      function prevMonth() {
-          currentDate.setMonth(currentDate.getMonth() - 1);
-          renderSchedule();
-          showToast(`${currentDate.getFullYear()}년 ${currentDate.getMonth() + 1}월`);
-      }
-      // 월 변경 (다음 달)
-      function nextMonth() {
-          currentDate.setMonth(currentDate.getMonth() + 1);
-          renderSchedule();
-          showToast(`${currentDate.getFullYear()}년 ${currentDate.getMonth() + 1}월`);
-      }
-      // 월의 마지막 날짜를 가져옵니다.
-      function getDaysInMonth(date) {
-          return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-      }
-      // 오늘의 날짜 카드에 스크롤합니다.
-      function scrollToTodayCard() {
-          const todayCard = document.querySelector('.schedule-card.today');
-          const header = document.querySelector('.header'); 
-          if (todayCard && header) {
-              const headerHeight = header.offsetHeight; 
-              const targetScrollY = todayCard.offsetTop - headerHeight - 30;
-              window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
-          } else if (todayCard) {
-              todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-      }
-      // 스케줄 카드를 생성합니다. 💥 백엔드 응답 형식에 맞춰 item.day, item.night1, item.night2로 수정했습니다.
-      function createDutyCard(dayNum, dayName, dateObj, dutyData = null) {
-        const today = new Date();
-        const isToday = dateObj.getDate() === today.getDate() &&
-                        dateObj.getMonth() === today.getMonth() &&
-                        dateObj.getFullYear() === today.getFullYear();
+        const isSaturday = dateObj.getDay() === 6;
+        const isSunday = dateObj.getDay() === 0;
 
-        const isSaturday = dateObj.getDay() === 6;
-        const isSunday = dateObj.getDay() === 0;
-
-        let cardHtml = `<div class="schedule-card${isToday ? ' today' : ''}">`;
-        
-        // 아이콘 결정을 위한 변수 초기화
-        let dutyIconHtml = ''; // 💥 날짜 옆에 표시될 아이콘 HTML
-        if (dutyData && dutyData.type) {
-            if (dutyData.type === '주') {
-                dutyIconHtml = `<span class="material-icons duty-icon day-icon">wb_sunny</span>`;
-            } else if (dutyData.type === '야') {
-                dutyIconHtml = `<span class="material-icons duty-icon night-icon">nights_stay</span>`;
-            }
-        }
+        let cardHtml = `<div class="schedule-card${isToday ? ' today' : ''}">`;
+        
+        // 아이콘 결정을 위한 변수 초기화
+        let dutyIconHtml = ''; // 💥 날짜 옆에 표시될 아이콘 HTML
+        if (dutyData && dutyData.type) {
+            if (dutyData.type === '주') {
+                dutyIconHtml = `<span class="material-icons duty-icon day-icon">wb_sunny</span>`;
+            } else if (dutyData.type === '야') {
+                dutyIconHtml = `<span class="material-icons duty-icon night-icon">nights_stay</span>`;
+            }
+        }
 
 
-        // 💥💥💥 날짜 영역 HTML 구조 변경: 아이콘을 card-date 안에 날짜보다 먼저 위치시킵니다. 💥💥💥
-        cardHtml += `
-            <div class="card-date">
-                ${dutyIconHtml} <!-- 💥 아이콘은 여기에 위치! 💥 -->
-                <span class="day-num">${dayNum}</span>
-                <span class="day-name${isSaturday ? ' weekend-sat' : isSunday ? ' weekend-sun' : ''}">${dayName}</span>
-            </div>
-        `;
+        // 💥💥💥 날짜 영역 HTML 구조 변경: 아이콘을 card-date 안에 날짜보다 먼저 위치시킵니다. 💥💥💥
+        cardHtml += `
+            <div class="card-date">
+                ${dutyIconHtml}                 <span class="day-num">${dayNum}</span>
+                <span class="day-name${isSaturday ? ' weekend-sat' : isSunday ? ' weekend-sun' : ''}">${dayName}</span>
+            </div>
+        `;
 
-        // 💥💥💥 스케줄 데이터 처리 로직은 그대로 유지 💥💥💥
-        if (dutyData && (dutyData.day || dutyData.night1 || dutyData.night2)) {
-            cardHtml += `
-                <div class="card-duties">
-                    <!-- 주간 근무자 영역 -->
-                    <div class="duty-col day-duty-col">
-                        ${dutyData.day ? `
-                            <span>${dutyData.day}</span>
-                        ` : ''}
-                    </div>
-                    <!-- 야간 근무자 영역 -->
-                    <div class="duty-col night-duty-col">
-                        ${(dutyData.night1 || dutyData.night2) ? `
-                            <span>
-                                ${dutyData.night1 || ''} 
-                                ${ (dutyData.night1 && dutyData.night2) ? `　` : '' } 
-                                ${dutyData.night2 || ''}
-                            </span>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        } else {
-            cardHtml += `
-                <div class="card-duties" style="text-align: center;">
-                    <span style="color: #aaa;">${dutyData && dutyData.type === '비' ? ' ' : '스케줄 없음'}</span>
-                </div>
-            `;
-        }
-        cardHtml += `</div>`;
-        return cardHtml;
-      }
+        // 💥💥💥 스케줄 데이터 처리 로직은 그대로 유지 💥💥💥
+        if (dutyData && (dutyData.day || dutyData.night1 || dutyData.night2)) {
+            cardHtml += `
+                <div class="card-duties">
+                                        <div class="duty-col day-duty-col">
+                        ${dutyData.day ? `
+                            <span>${dutyData.day}</span>
+                        ` : ''}
+                    </div>
+                                        <div class="duty-col night-duty-col">
+                        ${(dutyData.night1 || dutyData.night2) ? `
+                            <span>
+                                ${dutyData.night1 || ''} 
+                                ${ (dutyData.night1 && dutyData.night2) ? `　` : '' } 
+                                ${dutyData.night2 || ''}
+                            </span>
+                    </div>
+                </div>
+            `;
+        } else {
+            cardHtml += `
+                <div class="card-duties" style="text-align: center;">
+                    <span style="color: #aaa;">${dutyData && dutyData.type === '비' ? ' ' : '스케줄 없음'}</span>
+                </div>
+            `;
+        }
+        cardHtml += `</div>`;
+        return cardHtml;
+      }
 
-      // 스케줄을 렌더링하고, 필요 시 오늘 날짜로 스크롤합니다.
-      // 💥 currentUserId와 currentChatId를 사용하여 백엔드 요청 시 활용합니다.
-      // @param {boolean} [scrollToToday=false] 렌더링 후 오늘 날짜로 스크롤할지 여부
-      async function renderSchedule(scrollToToday = false) { 
-          // 💥 검증되지 않은 사용자 ID라면 스케줄 로드를 중단합니다.
-          if (!currentUserId || !currentChatId) { // user ID 또는 chat ID가 없으면 스케줄 로드 중단
-              console.warn('사용자/채팅방 ID가 없어 스케줄을 로드할 수 없습니다.');
-              document.getElementById('main-content').innerHTML = `
-                  <p style="text-align: center; color: #dc3545; margin-top: 50px;">
-                      사용자/채팅방 인증이 필요하거나 실패했습니다.
-                  </p>
-              `;
-              return;
-          }
+      // 스케줄을 렌더링하고, 필요 시 오늘 날짜로 스크롤합니다.
+      // 💥 currentUserId와 currentChatId를 사용하여 백엔드 요청 시 활용합니다.
+      // @param {boolean} [scrollToToday=false] 렌더링 후 오늘 날짜로 스크롤할지 여부
+      async function renderSchedule(scrollToToday = false) { 
+          // 💥 검증되지 않은 사용자 ID라면 스케줄 로드를 중단합니다.
+          if (!currentUserId || !currentChatId) { // user ID 또는 chat ID가 없으면 스케줄 로드 중단
+              console.warn('사용자/채팅방 ID가 없어 스케줄을 로드할 수 없습니다.');
+              document.getElementById('main-content').innerHTML = `
+                  <p style="text-align: center; color: #dc3545; margin-top: 50px;">
+                      사용자/채팅방 인증이 필요하거나 실패했습니다.
+                  </p>
+              `;
+              return;
+          }
 
-          updateMonthHeader();
-          const el = document.getElementById('main-content');
-          el.innerHTML = '';
-          const year = currentDate.getFullYear();
-          const month = currentDate.getMonth() + 1;
-          const start = `${year}-${String(month).padStart(2,'0')}-01`;
-          const end = `${year}-${String(month).padStart(2,'0')}-${String(getDaysInMonth(currentDate)).padStart(2,'0')}`;
+          updateMonthHeader();
+          const el = document.getElementById('main-content');
+          el.innerHTML = '';
+          const year = currentDate.getFullYear();
+          const month = currentDate.getMonth() + 1;
+          const start = `${year}-${String(month).padStart(2,'0')}-01`;
+          const end = `${year}-${String(month).padStart(2,'0')}-${String(getDaysInMonth(currentDate)).padStart(2,'0')}`;
 
-          try {
-              const res = await fetch(`${WORKER_API_BASE}/api/schedule?start=${start}&end=${end}`, {
-                  // 백엔드에서 사용자별 스케줄 로직이 필요한 경우, userId와 chatId를 헤더로 보낼 수 있습니다.
-                  headers: { 'X-User-Id': currentUserId, 'X-Chat-Id': currentChatId } 
-              });            
-              // 💥💥💥 스케줄 로딩 디버깅 로그 💥💥💥
-              const rawResponseText = await res.text();
-              console.log("DEBUG_SCHEDULE_RAW_RESPONSE:", rawResponseText);
-              if (!res.ok) {
-                  let errorMessage = '알 수 없는 서버 오류';
-                  try {
-                      const errorData = JSON.parse(rawResponseText);
-                      errorMessage = errorData.error || errorData.reason || errorMessage;
-                  } catch (e) { /* JSON 파싱 실패 시 그냥 텍스트 사용 */ }
-                  throw new Error(errorMessage);
-              }
-              const data = JSON.parse(rawResponseText); // rawResponseText를 JSON으로 파싱
-              console.log("DEBUG_SCHEDULE_PARSED_DATA:", data); // 파싱된 데이터 확인
-              if (!Array.isArray(data)) {
-                  throw new Error(data.error || '예상치 못한 데이터 형식: 배열이 아님');
-              }
-              // 렌더링
-              if (data.length > 0) {
-                  el.innerHTML = data.map(item => {
-                      const d = new Date(item.date); 
-                      // 백엔드 /api/schedule 응답 구조에 맞춰 item.day, item.night1, item.night2 입니다.
-                      const dutyDisplayData = {
-                          day: item.day,
-                          night1: item.night1,
-                          night2: item.night2,
-                          type: item.type // '주' '야' '비' 구분을 위해 type도 전달
-                      };
-                      return createDutyCard(d.getDate(), DAYS[d.getDay()], d, dutyDisplayData);
-                  }).join('');
-              } else {
-                  el.innerHTML = `<p style="text-align: center; margin-top: 50px;">해당 월의 스케줄이 없습니다.</p>`;
-              }
-              
-              if (scrollToToday) {
-                  scrollToTodayCard();
-              }
-          } catch (error) { 
-              console.error('스케줄 데이터를 불러오는 중 오류 발생:', error);              
-              const days = getDaysInMonth(currentDate);
-              let fallbackHtml = '';
-              for (let i = 1; i <= days; i++) {
-                  const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
-                  // 오류 발생 시에는 dutyData를 null로 전달하여 '스케줄 없음' 표시
-                  fallbackHtml += createDutyCard(i, DAYS[date.getDay()], date, null); 
-              }
-              el.innerHTML = fallbackHtml; 
-              showToast(`스케줄 데이터를 불러올 수 없습니다. (${error.message || "네트워크 오류"})`);
-          }
-      }
+          try {
+              const res = await fetch(`${WORKER_API_BASE}/api/schedule?start=${start}&end=${end}`, {
+                  // 백엔드에서 사용자별 스케줄 로직이 필요한 경우, userId와 chatId를 헤더로 보낼 수 있습니다.
+                  headers: { 'X-User-Id': currentUserId, 'X-Chat-Id': currentChatId } 
+              });            
+              // 💥💥💥 스케줄 로딩 디버깅 로그 💥💥💥
+              const rawResponseText = await res.text();
+              console.log("DEBUG_SCHEDULE_RAW_RESPONSE:", rawResponseText);
+              if (!res.ok) {
+                  let errorMessage = '알 수 없는 서버 오류';
+                  try {
+                      const errorData = JSON.parse(rawResponseText);
+                      errorMessage = errorData.error || errorData.reason || errorMessage;
+                  } catch (e) { /* JSON 파싱 실패 시 그냥 텍스트 사용 */ }
+                  throw new Error(errorMessage);
+              }
+              const data = JSON.parse(rawResponseText); // rawResponseText를 JSON으로 파싱
+              console.log("DEBUG_SCHEDULE_PARSED_DATA:", data); // 파싱된 데이터 확인
+              if (!Array.isArray(data)) {
+                  throw new Error(data.error || '예상치 못한 데이터 형식: 배열이 아님');
+              }
+              // 렌더링
+              if (data.length > 0) {
+                  el.innerHTML = data.map(item => {
+                      const d = new Date(item.date); 
+                      // 백엔드 /api/schedule 응답 구조에 맞춰 item.day, item.night1, item.night2 입니다.
+                      const dutyDisplayData = {
+                          day: item.day,
+                          night1: item.night1,
+                          night2: item.night2,
+                          type: item.type // '주' '야' '비' 구분을 위해 type도 전달
+                      };
+                      return createDutyCard(d.getDate(), DAYS[d.getDay()], d, dutyDisplayData);
+                  }).join('');
+              } else {
+                  el.innerHTML = `<p style="text-align: center; margin-top: 50px;">해당 월의 스케줄이 없습니다.</p>`;
+              }
+              
+              if (scrollToToday) {
+                  scrollToTodayCard();
+              }
+          } catch (error) { 
+              console.error('스케줄 데이터를 불러오는 중 오류 발생:', error);              
+              const days = getDaysInMonth(currentDate);
+              let fallbackHtml = '';
+              for (let i = 1; i <= days; i++) {
+                  const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
+                  // 오류 발생 시에는 dutyData를 null로 전달하여 '스케줄 없음' 표시
+                  fallbackHtml += createDutyCard(i, DAYS[date.getDay()], date, null); 
+              }
+              el.innerHTML = fallbackHtml; 
+              showToast(`스케줄 데이터를 불러올 수 없습니다. (${error.message || "네트워크 오류"})`);
+          }
+      }
 
-      // '오늘' 버튼 클릭 시 실행 함수
-      function goToToday() {
-          currentDate = new Date(); 
-          renderSchedule(true); // 스크롤 플래그를 true로 전달
-      }
+      // '오늘' 버튼 클릭 시 실행 함수
+      function goToToday() {
+          currentDate = new Date(); 
+          renderSchedule(true); // 스크롤 플래그를 true로 전달
+      }
 
-      async function openSettingsModal() {
-        document.getElementById('settings-modal').style.display = 'flex';
-        try {
-            const res = await fetch(`${WORKER_API_BASE}/api/settings`);
-            const settings = await res.json();
-            if (settings.cycle) {
-                document.getElementById('duty-cycle').value = settings.cycle;
-            }
-            if (settings.baseDate) {
-                document.getElementById('duty-base-date').value = settings.baseDate.substring(0, 10);
-            }
-            if (settings.users && Array.isArray(settings.users)) {
-                document.getElementById('duty-users').value = settings.users.join(' ');
-            }
-        } catch (e) {
-            console.error('Failed to load settings:', e);
-            showToast('Failed to load settings.');
-        }
-      }
+      async function openSettingsModal() {
+        document.getElementById('settings-modal').style.display = 'flex';
+        try {
+            const res = await fetch(`${WORKER_API_BASE}/api/settings`);
+            const settings = await res.json();
+            if (settings.cycle) {
+                document.getElementById('duty-cycle').value = settings.cycle;
+            }
+            if (settings.baseDate) {
+                document.getElementById('duty-base-date').value = settings.baseDate.substring(0, 10);
+            }
+            if (settings.users && Array.isArray(settings.users)) {
+                document.getElementById('duty-users').value = settings.users.join(' ');
+            }
+        } catch (e) {
+            console.error('Failed to load settings:', e);
+            showToast('Failed to load settings.');
+        }
+      }
 
-      function closeSettingsModal() {
-          document.getElementById('settings-modal').style.display = 'none';
+      function closeSettingsModal() {
+          document.getElementById('settings-modal').style.display = 'none';
           // 💾 설정 모달이 닫힐 때 settings-active 클래스를 제거 (버튼을 다시 숨김)
           const footerNav = document.querySelector('.footer-nav');
           if (footerNav.classList.contains('settings-active')) {
               footerNav.classList.remove('settings-active');
           }
-      }
-      async function saveDutyCycle() {
-        const dutyCycle = document.getElementById('duty-cycle').value;
-        const dutyBaseDate = document.getElementById('duty-base-date').value;
-        const dutyUsers = document.getElementById('duty-users').value;
-        const usersArray = dutyUsers.split(' ').filter(u => u.trim() !== '');
+      }
+      async function saveDutyCycle() {
+        const dutyCycle = document.getElementById('duty-cycle').value;
+        const dutyBaseDate = document.getElementById('duty-base-date').value;
+        const dutyUsers = document.getElementById('duty-users').value;
+        const usersArray = dutyUsers.split(' ').filter(u => u.trim() !== '');
 
-        try {
-            const res = await fetch(`${WORKER_API_BASE}/api/settings`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    cycle: dutyCycle,
-                    baseDate: dutyBaseDate,
-                    users: usersArray
-                })
-            });
+        try {
+            const res = await fetch(`${WORKER_API_BASE}/api/settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cycle: dutyCycle,
+                    baseDate: dutyBaseDate,
+                    users: usersArray
+                })
+            });
 
-            if (res.ok) {
-                showToast('설정이 성공적으로 저장되었습니다!');
-                closeSettingsModal();
-                renderSchedule(); // 설정 변경 후 스케줄 새로고침
-            } else {
-                const errorData = await res.json();
-                showToast(`설정 저장 실패: ${errorData.error || res.statusText}`);
-            }
-        } catch (e) {
-            console.error('Failed to save settings:', e);
-            showToast('설정 저장 중 오류가 발생했습니다.');
-        }
-      }
+            if (res.ok) {
+                showToast('설정이 성공적으로 저장되었습니다!');
+                closeSettingsModal();
+                renderSchedule(); // 설정 변경 후 스케줄 새로고침
+            } else {
+                const errorData = await res.json();
+                showToast(`설정 저장 실패: ${errorData.error || res.statusText}`);
+            }
+        } catch (e) {
+            console.error('Failed to save settings:', e);
+            showToast('설정 저장 중 오류가 발생했습니다.');
+        }
+      }
 
-      
-      let toastTimeoutId = null; // 타이머 ID를 저장할 전역 변수      
-      function showToast(message, duration = 1000) {
-          let toast = document.getElementById('toast');
-          if (!toast) {
-              toast = document.createElement('div');
-              toast.id = 'toast';
-              document.body.appendChild(toast);
-          }
-      
-          // 💥💥💥 기존 타이머가 있다면 클리어 (토스트가 사라지지 않는 문제 해결 핵심!) 💥💥💥
-          if (toastTimeoutId) {
-              clearTimeout(toastTimeoutId);
-              toastTimeoutId = null;
-          }
-      
-          // 메시지 업데이트 및 보이도록 설정
-          toast.textContent = message;
-          toast.style.visibility = 'visible'; // 즉시 보이도록
-          toast.style.opacity = '1';          // 불투명하게 (CSS 트랜지션 시작)
-      
-          // 지정된 시간(duration) 후 토스트를 사라지게 하는 타이머 설정
-          toastTimeoutId = setTimeout(() => {
-              toast.style.opacity = '0'; // 투명하게 만듭니다 (CSS 트랜지션 시작)
-              // opacity 트랜지션이 완료될 시간을 기다린 후 요소를 완전히 숨깁니다.
-              // CSS transition의 duration과 동일하게 맞춥니다. (0.3s = 300ms)
-              setTimeout(() => {
-                  // 이 시점에 opacity가 0이 아니면 다른 토스트가 시작됐을 수 있으므로 확인
-                  if (toast.style.opacity === '0') { 
-                      toast.style.visibility = 'hidden'; // 완전히 숨김
-                  }
-                  toastTimeoutId = null; // 타이머 ID 초기화
-              }, 1000); // CSS transition-duration 값과 동일하게 설정
-          }, duration); // ${duration}ms 후에 사라지기 시작
-      }
-      // 💥💥💥 스와이프 💥💥💥      
-      let touchStartX = 0;
-      const SWIPE_THRESHOLD = 80;                   // 스와이프로 인식할 최소 이동 거리 (픽셀)  
-      const scheduleContainer = document.querySelector('.container');  
-      scheduleContainer.addEventListener('touchstart', (e) => {
-          touchStartX = e.touches[0].clientX; // 터치 시작 지점의 X 좌표 저장
-      });
-      scheduleContainer.addEventListener('touchend', (e) => {
-          const touchEndX = e.changedTouches[0].clientX; // 터치 끝 지점의 X 좌표
-          const deltaX = touchEndX - touchStartX; // X축 이동 거리 계산  
-          if (deltaX > SWIPE_THRESHOLD) {
-              prevMonth(); // 오른쪽으로 스와이프 (이전 달로 이동)
-          } else if (deltaX < -SWIPE_THRESHOLD) {
-              nextMonth(); // 왼쪽으로 스와이프 (다음 달로 이동)
-          }
-      });
-      // 💥💥💥 스와이프 끝 💥💥💥      
-    </script>
+      
+      let toastTimeoutId = null; // 타이머 ID를 저장할 전역 변수      
+      function showToast(message, duration = 1000) {
+          let toast = document.getElementById('toast');
+          if (!toast) {
+              toast = document.createElement('div');
+              toast.id = 'toast';
+              document.body.appendChild(toast);
+          }
+      
+          // 💥💥💥 기존 타이머가 있다면 클리어 (토스트가 사라지지 않는 문제 해결 핵심!) 💥💥💥
+          if (toastTimeoutId) {
+              clearTimeout(toastTimeoutId);
+              toastTimeoutId = null;
+          }
+      
+          // 메시지 업데이트 및 보이도록 설정
+          toast.textContent = message;
+          toast.style.visibility = 'visible'; // 즉시 보이도록
+          toast.style.opacity = '1';          // 불투명하게 (CSS 트랜지션 시작)
+      
+          // 지정된 시간(duration) 후 토스트를 사라지게 하는 타이머 설정
+          toastTimeoutId = setTimeout(() => {
+              toast.style.opacity = '0'; // 투명하게 만듭니다 (CSS 트랜지션 시작)
+              // opacity 트랜지션이 완료될 시간을 기다린 후 요소를 완전히 숨깁니다.
+              // CSS transition의 duration과 동일하게 맞춥니다. (0.3s = 300ms)
+              setTimeout(() => {
+                  // 이 시점에 opacity가 0이 아니면 다른 토스트가 시작됐을 수 있으므로 확인
+                  if (toast.style.opacity === '0') { 
+                      toast.style.visibility = 'hidden'; // 완전히 숨김
+                  }
+                  toastTimeoutId = null; // 타이머 ID 초기화
+              }, 1000); // CSS transition-duration 값과 동일하게 설정
+          }, duration); // ${duration}ms 후에 사라지기 시작
+      }
+      // 💥💥💥 스와이프 💥💥💥      
+      let touchStartX = 0;
+      const SWIPE_THRESHOLD = 80;                   // 스와이프로 인식할 최소 이동 거리 (픽셀)  
+      const scheduleContainer = document.querySelector('.container');  
+      scheduleContainer.addEventListener('touchstart', (e) => {
+          touchStartX = e.touches[0].clientX; // 터치 시작 지점의 X 좌표 저장
+      });
+      scheduleContainer.addEventListener('touchend', (e) => {
+          const touchEndX = e.changedTouches[0].clientX; // 터치 끝 지점의 X 좌표
+          const deltaX = touchEndX - touchStartX; // X축 이동 거리 계산  
+          if (deltaX > SWIPE_THRESHOLD) {
+              prevMonth(); // 오른쪽으로 스와이프 (이전 달로 이동)
+          } else if (deltaX < -SWIPE_THRESHOLD) {
+              nextMonth(); // 왼쪽으로 스와이프 (다음 달로 이동)
+          }
+      });
+      // 💥💥💥 스와이프 끝 💥💥💥      
+    </script>
+</body>
+</html>
