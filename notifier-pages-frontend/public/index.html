@@ -61,9 +61,9 @@
     .schedule-card {
       background-color: #ffffff;
       border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
       margin-bottom: 8px;
-      padding: 8px 12px;
+      padding: 8px 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -81,7 +81,7 @@
       position: relative;
     }
     .day-num {
-      font-weight: 700;
+      font-weight: 500;
       font-size: 1.1rem;
       color: #101922;
     }
@@ -101,9 +101,9 @@
       font-size: 1.1rem;
       transition: color 0.2s;
     }
-    .day-icon { color: #ffc107; }
-    .night-icon { color: #4a5482; }
-    .mixed-icon { color: #f96d00; }
+    .day-icon { left: 3px; color: #ffc107; }
+    .night-icon { left: 3px; color: #4a5482; }
+    .mixed-icon { left: 3px; color: #f96d00; }
     /* 당직자 열 정렬 */
     .card-duties {
       flex-grow: 1;
@@ -111,19 +111,19 @@
       justify-content: space-between;
       align-items: center;
       border-left: 1px solid #eee;
-      padding-left: 10px; /* 주간당직자를 오른쪽으로 띄우기 */
+      padding-left: 1px; /* 주간당직자를 오른쪽으로 띄우기 */
       color: #555;
       font-size: 1.0rem;
     }
     .day-duty-col {
-      flex: 1;
+      flex: 4;
       text-align: center; /* 주간 당직자 중앙 정렬 유지 */
-      font-weight: 400;
+      font-weight: 500;
     }
     .night-duty-col {
-      flex: 1;
+      flex: 6;
       text-align: center; /* 야간 당직자를 중앙쪽으로 이동 */
-      font-weight: 600;
+      font-weight: 500;
     }
     /* ---------- Settings Modal / Toast / Footer ---------- */
     #settings-modal {
