@@ -463,7 +463,7 @@
           const header = document.querySelector('.header'); 
           if (todayCard && header) {
               const headerHeight = header.offsetHeight; 
-              const targetScrollY = todayCard.offsetTop - headerHeight - 10;
+              const targetScrollY = todayCard.offsetTop - headerHeight - 30;
               window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
           } else if (todayCard) {
               todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -516,7 +516,7 @@
                         ${(dutyData.night1 || dutyData.night2) ? `
                             <span>
                                 ${dutyData.night1 || ''} 
-                                ${ (dutyData.night1 && dutyData.night2) ? `, ` : '' } 
+                                ${ (dutyData.night1 && dutyData.night2) ? `　` : '' } 
                                 ${dutyData.night2 || ''}
                             </span>
                         ` : ''}
