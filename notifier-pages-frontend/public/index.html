@@ -189,7 +189,7 @@
     .footer-nav {
       position: fixed;
       bottom: 0;
-      width: 100%;
+      width: 95%;
       max-width: 450px;
       left: 50%;
       transform: translateX(-50%);
@@ -244,7 +244,7 @@
       color: #137fec;
     }
     .footer-nav-item span.material-icons {
-      font-size: 1.6rem;
+      font-size: 1.4rem;
     }
     @keyframes fadeIn {
       from { opacity: 0; } to { opacity: 1; }
@@ -496,8 +496,7 @@
               });
           }
           // 🔑 [END] 설정 버튼 토글 트리거 리스너 추가
-      });
-
+      });
       // 💾 [START] 설정 토글 함수 정의
       function toggleSettingsVisibility() {
           const footerNav = document.querySelector('.footer-nav');
@@ -533,7 +532,7 @@
           const header = document.querySelector('.header'); 
           if (todayCard && header) {
               const headerHeight = header.offsetHeight; 
-              const targetScrollY = todayCard.offsetTop - headerHeight - 30;
+              const targetScrollY = todayCard.offsetTop - headerHeight - 50;
               window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
           } else if (todayCard) {
               todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
