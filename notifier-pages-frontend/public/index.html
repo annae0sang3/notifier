@@ -414,18 +414,28 @@
 
   <div id="toast"></div>
 
-  <footer class="footer-nav">
-    <a class="footer-nav-item" href="#" onclick="goToToday(); return false;">
-      <span class="material-icons">today</span>
-      <span>Today</span>
-    </a>
-    <a class="footer-nav-item" href="#" onclick="openSettingsModal(); return false;">
-      <span class="material-icons">settings</span>
-      <span>Settings</span>
-    </a>
-  </footer>
+                                                            <!-- <footer class="footer-nav">
+                                                              <a class="footer-nav-item" href="#" onclick="goToToday(); return false;">
+                                                                <span class="material-icons">today</span>
+                                                                <span>Today</span>
+                                                              </a>
+                                                              <a class="footer-nav-item" href="#" onclick="openSettingsModal(); return false;">
+                                                                <span class="material-icons">settings</span>
+                                                                <span>Settings</span>
+                                                              </a>
+                                                            </footer> -->
 
-  
+                                    <div class="fab-container">
+                                        <!-- Today 버튼 (기본적으로 보임) -->
+                                        <a id="today-fab" class="fab-item" href="#" onclick="goToToday(); return false;">
+                                            <span class="material-icons">today</span>
+                                        </a>
+                                    
+                                        <!-- Settings 버튼 (초기 상태에서는 숨겨져 있음) -->
+                                        <a id="settings-fab" class="fab-item hidden" href="#" onclick="openSettingsModal(); return false;">
+                                            <span class="material-icons">settings</span>
+                                        </a>
+                                    </div>
   <script>
       const DAYS = ['일', '월', '화', '수', '목', '금', '토']; 
       let currentDate = new Date(); 
