@@ -184,71 +184,7 @@
     /* 호버 효과 (Mini App에서는 잘 사용되지 않지만, 웹뷰 표준을 위해 유지) */
     .button.save:hover { background-color: #0f6ed4; }
     .button.cancel:hover { background-color: #5c636a; }
-                                                                                  /* 
-                                                                                  /* Footer Nav */
-                                                                                  .footer-nav {
-                                                                                    position: fixed;
-                                                                                    bottom: 0;
-                                                                                    width: 95%;
-                                                                                    max-width: 450px;
-                                                                                    left: 50%;
-                                                                                    transform: translateX(-50%);
-                                                                                    display: flex; /* ⚛️ Footer는 항상 flex로 유지합니다. */
-                                                                                    justify-content: space-around;
-                                                                                    height: 60px;
-                                                                                    align-items: center;
-                                                                                    background-color: #fff;
-                                                                                    border-top: 1px solid #eee;
-                                                                                    box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
-                                                                                    z-index: 50;
-                                                                                  }
                                                                               
-                                                                                  /* ⚙️ 설정 버튼 토글을 위한 CSS */
-                                                                                  .footer-nav-item {
-                                                                                    display: flex;
-                                                                                    flex-direction: column;
-                                                                                    align-items: center;
-                                                                                    padding: 8px 0;
-                                                                                    text-decoration: none;
-                                                                                    color: #6c757d;
-                                                                                    font-size: 0.8rem;
-                                                                                    transition: flex 0.3s ease, width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
-                                                                                    overflow: hidden;
-                                                                                  }
-                                                                                  
-                                                                                  /* 기본 상태: Today만 보임 */
-                                                                                  .footer-nav-item:nth-child(1) {
-                                                                                    flex: 1;
-                                                                                  }
-                                                                                  .footer-nav-item:nth-child(2) {
-                                                                                    flex: 0;
-                                                                                    width: 0;
-                                                                                    /* padding-left: 0;
-                                                                                    padding-right: 0; */
-                                                                                    opacity: 0;
-                                                                                    pointer-events: none;
-                                                                                  }
-                                                                                  
-                                                                                  /* 활성화 시 Settings 버튼 노출 */
-                                                                                  .footer-nav.settings-active .footer-nav-item:nth-child(1) {
-                                                                                    flex: 7;
-                                                                                  }
-                                                                                  .footer-nav.settings-active .footer-nav-item:nth-child(2) {
-                                                                                    flex: 3;
-                                                                                    width: auto;
-                                                                                    opacity: 1;
-                                                                                    pointer-events: auto;
-                                                                                  }
-                                                                                  
-                                                                                  .footer-nav-item.active, .footer-nav-item:hover {
-                                                                                    color: #137fec;
-                                                                                  }
-                                                                                  .footer-nav-item span.material-icons {
-                                                                                    font-size: 1.4rem;
-                                                                                  } 
-                                                                                  */
-
-
 
 
                                         
@@ -508,19 +444,7 @@
 
   <div id="toast"></div>
 
-                                                                    <!-- <footer class="footer-nav">
-                                                                      <a class="footer-nav-item" href="#" onclick="goToToday(); return false;">
-                                                                        <span class="material-icons">today</span>
-                                                                        <span>Today</span>
-                                                                      </a>
-                                                                      <a class="footer-nav-item" href="#" onclick="openSettingsModal(); return false;">
-                                                                        <span class="material-icons">settings</span>
-                                                                        <span>Settings</span>
-                                                                      </a>
-                                                                    </footer>   -->
-
-
-
+                                                                 
 
 
                           <div class="fab-container">
@@ -618,7 +542,7 @@
                   headerElement.style.display = 'block';
                   mainContentElement.style.display = 'block';
                                                                       fabContainer.style.display = 'flex';
-                                                                                                    // footerNavElement.style.display = 'flex'; // footer-nav는 flex로 설정되어 있으므로
+                                                                                                    
                   
                   goToToday(); // 오늘 날짜 스케줄 로드 시작
               } else {
@@ -668,24 +592,12 @@
       });
 
                                                                               
-                                                                                    // // 💾 [START] 설정 토글 함수 정의
-                                                                                    // function toggleSettingsVisibility() {
-                                                                                    //     const footerNav = document.querySelector('.footer-nav');
-                                                                                    //     // .settings-active 클래스를 추가/제거하여 CSS 비율을 변경합니다.
-                                                                                    //     footerNav.classList.toggle('settings-active'); 
-                                                                                    // }
-                                                                                    // // 💾 [END] 설정 토글 함수 정의
-
-
+                                                                                   
 
                                   
                                   // 💾 [START] 설정 토글 함수 정의
                                   function toggleSettingsVisibility() {
-                                    // const footerNav = document.querySelector('.footer-nav');
-                                    // footerNav.classList.toggle('settings-active'); 
-                                    // ↑↑↑ 기존 2줄 삭제 ↑↑↑
-                                  
-                                    // ↓↓↓ 새 로직 추가 ↓↓↓
+                                   
                                     const settingsFab = document.getElementById('fab-settings');
                                     settingsFab.classList.toggle('visible');
                                   
@@ -945,16 +857,7 @@
         }
       }
                                                                               
-                                                                                    // function closeSettingsModal() {
-                                                                                    //     document.getElementById('settings-modal').style.display = 'none';
-                                                                                    //     // 💾 설정 모달이 닫힐 때 settings-active 클래스를 제거 (버튼을 다시 숨김)
-                                                                                    //     const footerNav = document.querySelector('.footer-nav');
-                                                                                    //     if (footerNav.classList.contains('settings-active')) {
-                                                                                    //         footerNav.classList.remove('settings-active');
-                                                                                    //     }
-                                                                                    // }
-
-
+                                                                                   
 
 
 
@@ -963,12 +866,7 @@
                                           function closeSettingsModal() {
                                             document.getElementById('settings-modal').style.display = 'none';
                                             
-                                            // 💾 설정 모달이 닫힐 때 settings-active 클래스를 제거 (버튼을 다시 숨김)
-                                            // const footerNav = document.querySelector('.footer-nav');
-                                            // if (footerNav.classList.contains('settings-active')) {
-                                            //   footerNav.classList.remove('settings-active');
-                                            // }
-                                            // ↑↑↑ 기존 4줄 삭제 ↑↑↑
+                                           
                                           
                                             // ↓↓↓ [요청사항 5] 새 로직 추가 ↓↓↓
                                             const settingsFab = document.getElementById('fab-settings');
