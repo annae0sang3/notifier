@@ -550,13 +550,15 @@
         console.log("DEBUG: DOMContentLoaded Start"); // ✅ 이 로그가 콘솔에 찍히는지 확인
           const headerElement = document.querySelector('.header');
           const mainContentElement = document.getElementById('main-content');
-          const footerNavElement = document.querySelector('.footer-nav');
+                                                  const fabContainer = document.querySelector('.fab-container');  
+                                                                                  // const footerNavElement = document.querySelector('.footer-nav');
           const telegramInfoDiv = document.getElementById('telegram-info');
           const accessDeniedDiv = document.getElementById('access-denied');
           // 초기 UI 숨기기
           headerElement.style.display = 'none';
           mainContentElement.style.display = 'none';
-          footerNavElement.style.display = 'none';
+                                                        fabContainer.style.display = 'none';
+                                                                                              // footerNavElement.style.display = 'none';
           telegramInfoDiv.style.display = 'none'; // 초기 정보창도 숨김
           // 텔레그램 WebApp 스크립트 로드 여부 및 존재 여부 확인
           if (typeof Telegram === 'undefined' || !window.Telegram.WebApp) {
@@ -615,7 +617,8 @@
                   // ✅ 검증 통과 후 미니앱의 주요 UI 요소들을 보이게 함
                   headerElement.style.display = 'block';
                   mainContentElement.style.display = 'block';
-                  footerNavElement.style.display = 'flex'; // footer-nav는 flex로 설정되어 있으므로
+                                                                      fabContainer.style.display = 'flex';
+                                                                                                    // footerNavElement.style.display = 'flex'; // footer-nav는 flex로 설정되어 있으므로
                   
                   goToToday(); // 오늘 날짜 스케줄 로드 시작
               } else {
