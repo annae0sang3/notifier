@@ -279,144 +279,7 @@
       color: #dc3545; 
       font-weight:600;
     }
-
-
-
-
-
-
-
-
-
-
-    
-/* FAB 컨테이너 */
-
-.fab-container {
-
-  position: fixed;
-
-  bottom: 20px;
-
-  right: 20px;
-
-  z-index: 300;
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 10px;
-
-}
-
-
-
-/* FAB 공통 */
-
-.fab-btn {
-
-  width: 60px;
-
-  height: 60px;
-
-  border-radius: 50%;
-
-  border: none;
-
-  outline: none;
-
-  color: white;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-
-  cursor: pointer;
-
-  transition: all 0.28s ease;
-
-}
-
-
-
-/* Today 버튼 */
-
-.fab-today {
-
-  background-color: #137fec;
-
-}
-
-
-
-/* Settings 버튼 (기본 숨김) */
-
-.fab-settings {
-
-  background-color: #6c757d;
-
-
-
-  position: absolute;
-
-  bottom: 0;
-
-  right: 0;
-
-
-
-  opacity: 0;
-
-  transform: translateX(0) scale(0.5);
-
-  pointer-events: none;
-
-}
-
-
-
-/* 활성화 시 Settings 등장 */
-
-.fab-container.active .fab-settings {
-
-  opacity: 1;
-
-  transform: translateX(0) scale(1);
-
-  pointer-events: auto;
-
-}
-
-
-
-/* 활성화 시 Today 버튼 왼쪽으로 밀려나는 효과 */
-
-.fab-container.active .fab-today {
-
-  transform: translateX(-75px);
-
-}
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-    
+ 
     #toast {
         position: fixed;
         top: 50%;
@@ -434,6 +297,8 @@
         font-size: 1.0em;
         white-space: nowrap;
     }
+
+    
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -497,53 +362,7 @@
 
   <div id="toast"></div>
 
-
-
-
-
-
-
-
-
-
-
-  <div class="fab-container">
-
-  <button class="fab-btn fab-today" onclick="goToToday()">
-
-    <span class="material-icons">today</span>
-
-  </button>
-
-
-
-  <button class="fab-btn fab-settings" onclick="onSettingsFabClick(event)">
-
-    <span class="material-icons">settings</span>
-
-  </button>
-
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  <!-- <footer class="footer-nav">
+  <footer class="footer-nav">
     <a class="footer-nav-item" href="#" onclick="goToToday(); return false;">
       <span class="material-icons">today</span>
       <span>Today</span>
@@ -552,9 +371,7 @@
       <span class="material-icons">settings</span>
       <span>Settings</span>
     </a>
-  </footer> -->
-
-
+  </footer>
 
   
   <script>
@@ -653,263 +470,45 @@
               accessDeniedDiv.style.display = 'block';
               // window.Telegram.WebApp.close();
           }
-
-
-
-
-
-
-
-
-
-
        
-
-// =======================
-
-// 5연타 활성화 트리거
-
-// =======================
-
-let fabClickCount = 0;
-
-let fabClickTimer = null;
-
-
-
-function setupFabSecretTrigger() {
-
-  const headerTitle = document.getElementById('current-month-year');
-
-
-
-  headerTitle.addEventListener('click', () => {
-
-    fabClickCount++;
-
-
-
-    if (fabClickTimer) clearTimeout(fabClickTimer);
-
-
-
-    // 5번 클릭 시 FAB 토글
-
-    if (fabClickCount >= 5) {
-
-      toggleFabMenu(true);
-
-      fabClickCount = 0;
-
-      return;
-
-    }
-
-
-
-    fabClickTimer = setTimeout(() => {
-
-      fabClickCount = 0;
-
-    }, 1000);
-
-  });
-
-}
-
-
-
-
-
-// =======================
-
-// FAB 상태 토글
-
-// =======================
-
-function toggleFabMenu(forceOpen = false) {
-
-  const fabContainer = document.querySelector('.fab-container');
-
-
-
-  if (forceOpen || !fabContainer.classList.contains('active')) {
-
-    fabContainer.classList.add('active'); // Settings 열기
-
-    enableFabOutsideClickClose();
-
-  } else {
-
-    closeFabMenu();
-
-  }
-
-}
-
-
-
-function closeFabMenu() {
-
-  const fabContainer = document.querySelector('.fab-container');
-
-  fabContainer.classList.remove('active');
-
-  disableFabOutsideClickClose();
-
-}
-
-
-
-
-
-// =======================
-
-// Settings 클릭 → 모달
-
-// =======================
-
-function onSettingsFabClick(event) {
-
-  event.stopPropagation(); // 바깥 클릭 처리 방지
-
-  openSettingsModal();
-
-}
-
-
-
-
-
-// =======================
-
-// FAB 외부 클릭 → FAB 닫힘
-
-// =======================
-
-let outsideClickHandler = null;
-
-
-
-function enableFabOutsideClickClose() {
-
-  outsideClickHandler = function(event) {
-
-    const fabContainer = document.querySelector('.fab-container');
-
-
-
-    if (!fabContainer.contains(event.target)) {
-
-      closeFabMenu(); // 바깥 클릭 → 닫기
-
-    }
-
-  };
-
-
-
-  document.addEventListener('click', outsideClickHandler);
-
-}
-
-
-
-function disableFabOutsideClickClose() {
-
-  if (outsideClickHandler) {
-
-    document.removeEventListener('click', outsideClickHandler);
-
-    outsideClickHandler = null;
-
-  }
-
-}
-
-
-
-
-
-// =======================
-
-// 초기화
-
-// =======================
-
-document.addEventListener('DOMContentLoaded', () => {
-
-  setupFabSecretTrigger();
-
-}); 
-
-
-
-
-
-
-        
-
-
-
-
-        
-      //     // 🔑 [START] 설정 버튼 토글 트리거 리스너 추가 (DOM이 로드된 후)
-      //     const currentMonthYearElement = document.getElementById('current-month-year');
-      //     if (currentMonthYearElement) {
-      //         let clickCount = 0;
-      //         let timer = null;
-      //         const requiredClicks = 5;
-      //         const resetTime = 1000;
+          // 🔑 [START] 설정 버튼 토글 트리거 리스너 추가 (DOM이 로드된 후)
+          const currentMonthYearElement = document.getElementById('current-month-year');
+          if (currentMonthYearElement) {
+              let clickCount = 0;
+              let timer = null;
+              const requiredClicks = 5;
+              const resetTime = 1000;
               
-      //         currentMonthYearElement.addEventListener('click', () => {
-      //             clickCount++;
-      //             if (timer) { clearTimeout(timer); }
+              currentMonthYearElement.addEventListener('click', () => {
+                  clickCount++;
+                  if (timer) { clearTimeout(timer); }
 
-      //             if (clickCount >= requiredClicks) {
-      //                 toggleSettingsVisibility(); // 💾 정의된 함수 호출
-      //                 clickCount = 0;
-      //                 clearTimeout(timer);
-      //                 timer = null;
-      //                 console.log("Secret settings visibility toggled!");
-      //                 return;
-      //             }
+                  if (clickCount >= requiredClicks) {
+                      toggleSettingsVisibility(); // 💾 정의된 함수 호출
+                      clickCount = 0;
+                      clearTimeout(timer);
+                      timer = null;
+                      console.log("Secret settings visibility toggled!");
+                      return;
+                  }
 
-      //             timer = setTimeout(() => {
-      //                 if (clickCount > 0) {
-      //                     clickCount = 0;
-      //                     console.log("Click sequence reset.");
-      //                 }
-      //             }, resetTime);
-      //         });
-      //     }
-      //     // 🔑 [END] 설정 버튼 토글 트리거 리스너 추가
-      // });
-      // // 💾 [START] 설정 토글 함수 정의
-      // function toggleSettingsVisibility() {
-      //     const footerNav = document.querySelector('.footer-nav');
-      //     // .settings-active 클래스를 추가/제거하여 CSS 비율을 변경합니다.
-      //     footerNav.classList.toggle('settings-active'); 
-      // }
-      // // 💾 [END] 설정 토글 함수 정의
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                  timer = setTimeout(() => {
+                      if (clickCount > 0) {
+                          clickCount = 0;
+                          console.log("Click sequence reset.");
+                      }
+                  }, resetTime);
+              });
+          }
+          // 🔑 [END] 설정 버튼 토글 트리거 리스너 추가
+      });
+      // 💾 [START] 설정 토글 함수 정의
+      function toggleSettingsVisibility() {
+          const footerNav = document.querySelector('.footer-nav');
+          // .settings-active 클래스를 추가/제거하여 CSS 비율을 변경합니다.
+          footerNav.classList.toggle('settings-active'); 
+      }
+      // 💾 [END] 설정 토글 함수 정의
     
       // 월/년 헤더를 업데이트합니다.
       function updateMonthHeader() {
