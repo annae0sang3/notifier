@@ -184,68 +184,200 @@
     /* 호버 효과 (Mini App에서는 잘 사용되지 않지만, 웹뷰 표준을 위해 유지) */
     .button.save:hover { background-color: #0f6ed4; }
     .button.cancel:hover { background-color: #5c636a; }
-    
-    /* Footer Nav */
-    .footer-nav {
-      position: fixed;
-      bottom: 0;
-      width: 95%;
-      max-width: 450px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex; /* ⚛️ Footer는 항상 flex로 유지합니다. */
-      justify-content: space-around;
-      height: 60px;
-      align-items: center;
-      background-color: #fff;
-      border-top: 1px solid #eee;
-      box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
-      z-index: 50;
-    }
+                                                                                  /* 
+                                                                                  /* Footer Nav */
+                                                                                  .footer-nav {
+                                                                                    position: fixed;
+                                                                                    bottom: 0;
+                                                                                    width: 95%;
+                                                                                    max-width: 450px;
+                                                                                    left: 50%;
+                                                                                    transform: translateX(-50%);
+                                                                                    display: flex; /* ⚛️ Footer는 항상 flex로 유지합니다. */
+                                                                                    justify-content: space-around;
+                                                                                    height: 60px;
+                                                                                    align-items: center;
+                                                                                    background-color: #fff;
+                                                                                    border-top: 1px solid #eee;
+                                                                                    box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
+                                                                                    z-index: 50;
+                                                                                  }
+                                                                              
+                                                                                  /* ⚙️ 설정 버튼 토글을 위한 CSS */
+                                                                                  .footer-nav-item {
+                                                                                    display: flex;
+                                                                                    flex-direction: column;
+                                                                                    align-items: center;
+                                                                                    padding: 8px 0;
+                                                                                    text-decoration: none;
+                                                                                    color: #6c757d;
+                                                                                    font-size: 0.8rem;
+                                                                                    transition: flex 0.3s ease, width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+                                                                                    overflow: hidden;
+                                                                                  }
+                                                                                  
+                                                                                  /* 기본 상태: Today만 보임 */
+                                                                                  .footer-nav-item:nth-child(1) {
+                                                                                    flex: 1;
+                                                                                  }
+                                                                                  .footer-nav-item:nth-child(2) {
+                                                                                    flex: 0;
+                                                                                    width: 0;
+                                                                                    /* padding-left: 0;
+                                                                                    padding-right: 0; */
+                                                                                    opacity: 0;
+                                                                                    pointer-events: none;
+                                                                                  }
+                                                                                  
+                                                                                  /* 활성화 시 Settings 버튼 노출 */
+                                                                                  .footer-nav.settings-active .footer-nav-item:nth-child(1) {
+                                                                                    flex: 7;
+                                                                                  }
+                                                                                  .footer-nav.settings-active .footer-nav-item:nth-child(2) {
+                                                                                    flex: 3;
+                                                                                    width: auto;
+                                                                                    opacity: 1;
+                                                                                    pointer-events: auto;
+                                                                                  }
+                                                                                  
+                                                                                  .footer-nav-item.active, .footer-nav-item:hover {
+                                                                                    color: #137fec;
+                                                                                  }
+                                                                                  .footer-nav-item span.material-icons {
+                                                                                    font-size: 1.4rem;
+                                                                                  } 
+                                                                                  */
 
-    /* ⚙️ 설정 버튼 토글을 위한 CSS */
-    .footer-nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 8px 0;
-      text-decoration: none;
-      color: #6c757d;
-      font-size: 0.8rem;
-      transition: flex 0.3s ease, width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
-      overflow: hidden;
-    }
+
+
+
+                                        
+                                        .fab-container {
+                                          position: fixed;
+                                          bottom: 25px; /* 하단 여백 */
+                                          right: 25px;  /* 우측 여백 */
+                                          display: flex;
+                                          flex-direction: row-reverse; /* Today 버튼이 항상 가장 오른쪽에 오도록 */
+                                          align-items: center;
+                                          z-index: 900;
+                                        }
+                                        
+                                        .fab {
+                                          width: 56px;
+                                          height: 56px;
+                                          background-color: #137fec;
+                                          color: #fff;
+                                          border-radius: 50%;
+                                          display: flex;
+                                          align-items: center;
+                                          justify-content: center;
+                                          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+                                          text-decoration: none;
+                                          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+                                          cursor: pointer;
+                                        }
+                                        
+                                        .fab.today-fab {
+                                          background-color: #137fec; /* Today 버튼 색상 */
+                                          z-index: 902; /* 항상 위에 있도록 */
+                                        }
+                                        
+                                        /* [요청사항 3] 설정 버튼 초기 숨김 및 노출 스타일 */
+                                        .fab.settings-fab {
+                                          background-color: #6c757d; /* 설정 버튼 색상 */
+                                          /* 초기 숨김 상태 */
+                                          width: 0;
+                                          opacity: 0;
+                                          padding: 0;
+                                          margin-right: 0;
+                                          overflow: hidden;
+                                          pointer-events: none;
+                                          transform: scale(0.5);
+                                          z-index: 901;
+                                        }
+                                        
+                                        .fab.settings-fab.visible {
+                                          /* 활성화 상태 (Today 버튼을 밀어내며 나타남) */
+                                          width: 56px;
+                                          opacity: 1;
+                                          margin-right: 12px; /* 버튼 사이 간격 */
+                                          pointer-events: auto;
+                                          transform: scale(1);
+                                        }
+                                        
+                                        /* [요청사항 6] 모달 버튼 영역 재정렬 */
+                                        .modal-buttons {
+                                          display: flex;
+                                          justify-content: space-between; /* 양쪽 끝으로 정렬 */
+                                          align-items: center;
+                                          margin-top: 24px;
+                                        }
+                                        
+                                        .action-buttons {
+                                          display: flex;
+                                          gap: 10px; /* 닫기/저장 버튼 사이 간격 */
+                                        }
+                                        
+                                        /* [요청사항 6, 7] 도움말 아이콘 및 툴팁 스타일 */
+                                        .help-container {
+                                          position: relative; /* 툴팁 위치의 기준점 */
+                                        }
+                                        
+                                        .help-icon {
+                                          font-size: 1.6rem;
+                                          color: #888;
+                                          cursor: pointer;
+                                          padding: 5px; /* 클릭 영역 확보 */
+                                          transition: color 0.2s;
+                                        }
+                                        .help-icon:hover {
+                                          color: #333;
+                                        }
+                                        
+                                        .modal-tooltip {
+                                          display: none; /* 초기 숨김 */
+                                          position: absolute;
+                                          bottom: 120%; /* 아이콘 위쪽에 표시 */
+                                          left: -10px; /* 아이콘 대비 왼쪽으로 살짝 이동 */
+                                          width: 280px; /* 툴팁 너비 */
+                                          background-color: #333;
+                                          color: #fff;
+                                          padding: 12px 16px;
+                                          border-radius: 8px;
+                                          font-size: 0.9rem;
+                                          line-height: 1.5;
+                                          text-align: left;
+                                          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+                                          z-index: 1001; /* 모달 컨텐츠보다 위에 표시 */
+                                        }
+                                        
+                                        .modal-tooltip p {
+                                          margin: 0 0 8px 0;
+                                        }
+                                        .modal-tooltip p:last-child {
+                                          margin-bottom: 0;
+                                        }
+                                        
+                                        /* 툴팁 꼬리표 (말풍선처럼 보이도록) */
+                                        .modal-tooltip::after {
+                                          content: '';
+                                          position: absolute;
+                                          top: 100%; /* 툴팁 하단 중앙 */
+                                          left: 20px; /* 꼬리표 위치 */
+                                          border-width: 6px;
+                                          border-style: solid;
+                                          border-color: #333 transparent transparent transparent;
+                                        }
+                                        
+                                        .modal-tooltip.visible {
+                                          display: block; /* 툴팁 보이기 */
+                                        }
+
+
+
+
+
     
-    /* 기본 상태: Today만 보임 */
-    .footer-nav-item:nth-child(1) {
-      flex: 1;
-    }
-    .footer-nav-item:nth-child(2) {
-      flex: 0;
-      width: 0;
-      /* padding-left: 0;
-      padding-right: 0; */
-      opacity: 0;
-      pointer-events: none;
-    }
-    
-    /* 활성화 시 Settings 버튼 노출 */
-    .footer-nav.settings-active .footer-nav-item:nth-child(1) {
-      flex: 7;
-    }
-    .footer-nav.settings-active .footer-nav-item:nth-child(2) {
-      flex: 3;
-      width: auto;
-      opacity: 1;
-      pointer-events: auto;
-    }
-    
-    .footer-nav-item.active, .footer-nav-item:hover {
-      color: #137fec;
-    }
-    .footer-nav-item span.material-icons {
-      font-size: 1.4rem;
-    }
 
    
     @keyframes fadeIn {
@@ -355,8 +487,20 @@
         <input id="duty-users" type="text" placeholder="예: 홍길동 김철수 이영희">
 
         <div class="modal-buttons">
-          <button class="button cancel" onclick="closeSettingsModal()">닫기</button>
-          <button class="button save" onclick="saveDutyCycle()">저장</button>
+            <div class="help-container">
+              <span id="help-tooltip-trigger" class="material-icons help-icon" onclick="toggleHelpTooltip()">help_outline</span>
+              
+              <div id="help-tooltip" class="modal-tooltip">
+                <p>1. 기준일은 근무주기의 첫 날(주간)로 설정 - 근주주기의 첫 날이 기준일이 됨.</p>
+                <p>2. 기준일부터 근무자 명단 순서로 당직 배정이됨.</p>
+                <p>3. 근무자가 홀수일 경우 abcabc 순서, 짝수일 경우 abcdbadc 순서</p>
+              </div>
+            </div>
+            
+            <div class="action-buttons">
+              <button class="button cancel" onclick="closeSettingsModal()">닫기</button>
+              <button class="button save" onclick="saveDutyCycle()">저장</button>
+            </div>
         </div>
       </div>
     </div>
@@ -364,16 +508,32 @@
 
   <div id="toast"></div>
 
-  <footer class="footer-nav">
-    <a class="footer-nav-item" href="#" onclick="goToToday(); return false;">
-      <span class="material-icons">today</span>
-      <span>Today</span>
-    </a>
-    <a class="footer-nav-item" href="#" onclick="openSettingsModal(); return false;">
-      <span class="material-icons">settings</span>
-      <span>Settings</span>
-    </a>
-  </footer>  
+                                                                    <!-- <footer class="footer-nav">
+                                                                      <a class="footer-nav-item" href="#" onclick="goToToday(); return false;">
+                                                                        <span class="material-icons">today</span>
+                                                                        <span>Today</span>
+                                                                      </a>
+                                                                      <a class="footer-nav-item" href="#" onclick="openSettingsModal(); return false;">
+                                                                        <span class="material-icons">settings</span>
+                                                                        <span>Settings</span>
+                                                                      </a>
+                                                                    </footer>   -->
+
+
+
+
+
+                          <div class="fab-container">
+                            <a id="fab-settings" class="fab settings-fab" href="#" onclick="openSettingsModal(); return false;">
+                              <span class="material-icons">settings</span>
+                            </a>
+                            <a id="fab-today" class="fab today-fab" href="#" onclick="goToToday(); return false;">
+                              <span class="material-icons">today</span>
+                            </a>
+                          </div>
+
+
+
   
   <script>
       const DAYS = ['일', '월', '화', '수', '목', '금', '토']; 
@@ -504,15 +664,40 @@
           // 🔑 [END] 설정 버튼 토글 트리거 리스너 추가
       });
 
+                                                                              
+                                                                                    // // 💾 [START] 설정 토글 함수 정의
+                                                                                    // function toggleSettingsVisibility() {
+                                                                                    //     const footerNav = document.querySelector('.footer-nav');
+                                                                                    //     // .settings-active 클래스를 추가/제거하여 CSS 비율을 변경합니다.
+                                                                                    //     footerNav.classList.toggle('settings-active'); 
+                                                                                    // }
+                                                                                    // // 💾 [END] 설정 토글 함수 정의
 
-      // 💾 [START] 설정 토글 함수 정의
-      function toggleSettingsVisibility() {
-          const footerNav = document.querySelector('.footer-nav');
-          // .settings-active 클래스를 추가/제거하여 CSS 비율을 변경합니다.
-          footerNav.classList.toggle('settings-active'); 
-      }
-      // 💾 [END] 설정 토글 함수 정의
 
+
+                                  
+                                  // 💾 [START] 설정 토글 함수 정의
+                                  function toggleSettingsVisibility() {
+                                    // const footerNav = document.querySelector('.footer-nav');
+                                    // footerNav.classList.toggle('settings-active'); 
+                                    // ↑↑↑ 기존 2줄 삭제 ↑↑↑
+                                  
+                                    // ↓↓↓ 새 로직 추가 ↓↓↓
+                                    const settingsFab = document.getElementById('fab-settings');
+                                    settingsFab.classList.toggle('visible');
+                                  
+                                    // [요청사항 4] 버튼이 '보이게' 될 때만 외부 클릭 리스너를 추가
+                                    if (settingsFab.classList.contains('visible')) {
+                                      // setTimeout을 0으로 주어, 현재 클릭 이벤트가 먼저 완료된 후 리스너를 등록합니다.
+                                      setTimeout(() => {
+                                        document.addEventListener('click', hideSettingsOnClickOutside);
+                                      }, 0);
+                                    } else {
+                                      // 버튼이 '숨겨질' 때는 리스너를 즉시 제거합니다.
+                                      document.removeEventListener('click', hideSettingsOnClickOutside);
+                                    }
+                                  }
+                                  // 💾 [END] 설정 토글 함수 정의
 
                   
       // 월/년 헤더를 업데이트합니다.
@@ -536,6 +721,30 @@
       function getDaysInMonth(date) {
           return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
       }
+
+
+
+                                
+                                function toggleHelpTooltip() {
+                                  const tooltip = document.getElementById('help-tooltip');
+                                  tooltip.classList.toggle('visible');
+                                }
+                                
+                                // [요청사항 4] 설정 버튼 외 영역 클릭 시 버튼 숨김 처리 함수
+                                function hideSettingsOnClickOutside(event) {
+                                    const settingsFab = document.getElementById('fab-settings');
+                                    const monthYearHeader = document.getElementById('current-month-year'); // 트리거 영역
+                                
+                                    // 클릭한 대상이 설정 버튼(fab-settings) 또는 트리거(current-month-year)가 아니라면
+                                    if (!settingsFab.contains(event.target) && !monthYearHeader.contains(event.target)) {
+                                        if (settingsFab.classList.contains('visible')) {
+                                            settingsFab.classList.remove('visible');
+                                            document.removeEventListener('click', hideSettingsOnClickOutside); // 리스너 제거
+                                        }
+                                    }
+                                }
+
+    
     
       // 오늘의 날짜 카드에 스크롤합니다.
       function scrollToTodayCard() {
@@ -732,15 +941,48 @@
             showToast('Failed to load settings.');
         }
       }
+                                                                              
+                                                                                    // function closeSettingsModal() {
+                                                                                    //     document.getElementById('settings-modal').style.display = 'none';
+                                                                                    //     // 💾 설정 모달이 닫힐 때 settings-active 클래스를 제거 (버튼을 다시 숨김)
+                                                                                    //     const footerNav = document.querySelector('.footer-nav');
+                                                                                    //     if (footerNav.classList.contains('settings-active')) {
+                                                                                    //         footerNav.classList.remove('settings-active');
+                                                                                    //     }
+                                                                                    // }
 
-      function closeSettingsModal() {
-          document.getElementById('settings-modal').style.display = 'none';
-          // 💾 설정 모달이 닫힐 때 settings-active 클래스를 제거 (버튼을 다시 숨김)
-          const footerNav = document.querySelector('.footer-nav');
-          if (footerNav.classList.contains('settings-active')) {
-              footerNav.classList.remove('settings-active');
-          }
-      }
+
+
+
+
+                                          
+                                          
+                                          function closeSettingsModal() {
+                                            document.getElementById('settings-modal').style.display = 'none';
+                                            
+                                            // 💾 설정 모달이 닫힐 때 settings-active 클래스를 제거 (버튼을 다시 숨김)
+                                            // const footerNav = document.querySelector('.footer-nav');
+                                            // if (footerNav.classList.contains('settings-active')) {
+                                            //   footerNav.classList.remove('settings-active');
+                                            // }
+                                            // ↑↑↑ 기존 4줄 삭제 ↑↑↑
+                                          
+                                            // ↓↓↓ [요청사항 5] 새 로직 추가 ↓↓↓
+                                            const settingsFab = document.getElementById('fab-settings');
+                                            if (settingsFab.classList.contains('visible')) {
+                                              settingsFab.classList.remove('visible');
+                                            }
+                                            // [요청사항 4] 모달 닫힐 때 외부 클릭 리스너도 확실히 제거
+                                            document.removeEventListener('click', hideSettingsOnClickOutside);
+                                          
+                                            // [요청사항 7] 모달 닫힐 때 툴팁도 숨김
+                                            const tooltip = document.getElementById('help-tooltip');
+                                            if (tooltip.classList.contains('visible')) {
+                                              tooltip.classList.remove('visible');
+                                            }
+                                          }
+
+    
       async function saveDutyCycle() {
         const dutyCycle = document.getElementById('duty-cycle').value;
         const dutyBaseDate = document.getElementById('duty-base-date').value;
