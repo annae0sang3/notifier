@@ -185,67 +185,119 @@
     .button.save:hover { background-color: #0f6ed4; }
     .button.cancel:hover { background-color: #5c636a; }
     
-    /* Footer Nav */
-    .footer-nav {
-      position: fixed;
-      bottom: 0;
-      width: 95%;
-      max-width: 450px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex; /* ⚛️ Footer는 항상 flex로 유지합니다. */
-      justify-content: space-around;
-      height: 60px;
-      align-items: center;
-      background-color: #fff;
-      border-top: 1px solid #eee;
-      box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
-      z-index: 50;
-    }
+                                    /* /* Footer Nav */
+                                    .footer-nav {
+                                      position: fixed;
+                                      bottom: 0;
+                                      width: 95%;
+                                      max-width: 450px;
+                                      left: 50%;
+                                      transform: translateX(-50%);
+                                      display: flex; /* ⚛️ Footer는 항상 flex로 유지합니다. */
+                                      justify-content: space-around;
+                                      height: 60px;
+                                      align-items: center;
+                                      background-color: #fff;
+                                      border-top: 1px solid #eee;
+                                      box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.05);
+                                      z-index: 50;
+                                    }
+                                
+                                    /* ⚙️ 설정 버튼 토글을 위한 CSS */
+                                    .footer-nav-item {
+                                      display: flex;
+                                      flex-direction: column;
+                                      align-items: center;
+                                      padding: 8px 0;
+                                      text-decoration: none;
+                                      color: #6c757d;
+                                      font-size: 0.8rem;
+                                      transition: flex 0.3s ease, width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+                                      overflow: hidden;
+                                    }
+                                    
+                                    /* 기본 상태: Today만 보임 */
+                                    .footer-nav-item:nth-child(1) {
+                                      flex: 1;
+                                    }
+                                    .footer-nav-item:nth-child(2) {
+                                      flex: 0;
+                                      width: 0;
+                                      /* padding-left: 0;
+                                      padding-right: 0; */
+                                      opacity: 0;
+                                      pointer-events: none;
+                                    }
+                                    
+                                    /* 활성화 시 Settings 버튼 노출 */
+                                    .footer-nav.settings-active .footer-nav-item:nth-child(1) {
+                                      flex: 7;
+                                    }
+                                    .footer-nav.settings-active .footer-nav-item:nth-child(2) {
+                                      flex: 3;
+                                      width: auto;
+                                      opacity: 1;
+                                      pointer-events: auto;
+                                    }
+                                    
+                                    .footer-nav-item.active, .footer-nav-item:hover {
+                                      color: #137fec;
+                                    }
+                                    .footer-nav-item span.material-icons {
+                                      font-size: 1.4rem;
+                                    } */
 
-    /* ⚙️ 설정 버튼 토글을 위한 CSS */
-    .footer-nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 8px 0;
-      text-decoration: none;
-      color: #6c757d;
-      font-size: 0.8rem;
-      transition: flex 0.3s ease, width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
-      overflow: hidden;
-    }
+
+                  /* FAB 컨테이너: 화면 우측 하단에 고정 */
+                  .fab-container {
+                      position: fixed;
+                      bottom: 20px;
+                      right: 20px;
+                      display: flex;
+                      flex-direction: row-reverse; /* 버튼들을 오른쪽부터 나열 */
+                      gap: 10px; /* 버튼 사이 간격 */
+                      align-items: center;
+                  }
+                  
+                  /* 개별 FAB 아이템 공통 스타일 */
+                  .fab-item {
+                      display: flex;
+                      justify-content: center;
+                      align-items: center;
+                      width: 56px;
+                      height: 56px;
+                      background-color: #007bff; /* 예시 색상 */
+                      color: white;
+                      border-radius: 50%; /* 원형 버튼 */
+                      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                      text-decoration: none;
+                      transition: transform 0.3s ease-out, opacity 0.3s ease-out; /* 애니메이션 효과 */
+                  }
+                  
+                  /* Settings 버튼 초기 숨김 상태 */
+                  .fab-item.hidden {
+                      display: none; /* 초기 렌더링 시 아예 공간을 차지하지 않도록 숨김 */
+                      opacity: 0;
+                      transform: translateX(100%); /* 오른쪽 밖으로 밀어냄 */
+                  }
+                  
+                  /* JavaScript로 토글 시 적용될 애니메이션 클래스 */
+                  
+                  /* Today 버튼이 왼쪽으로 이동하는 상태 */
+                  .fab-item.move-left {
+                      transform: translateX(-66px); /* 버튼 너비 + 간격(56px + 10px)만큼 왼쪽으로 이동 */
+                  }
+                  
+                  /* Settings 버튼이 나타나는 상태 */
+                  .fab-item.fade-in-left {
+                      display: flex; /* hidden에서 display:none을 flex로 변경하여 보이게 함 */
+                      opacity: 1;
+                      transform: translateX(0); /* 원래 위치로 복귀 */
+                  }
+
+
+
     
-    /* 기본 상태: Today만 보임 */
-    .footer-nav-item:nth-child(1) {
-      flex: 1;
-    }
-    .footer-nav-item:nth-child(2) {
-      flex: 0;
-      width: 0;
-      /* padding-left: 0;
-      padding-right: 0; */
-      opacity: 0;
-      pointer-events: none;
-    }
-    
-    /* 활성화 시 Settings 버튼 노출 */
-    .footer-nav.settings-active .footer-nav-item:nth-child(1) {
-      flex: 7;
-    }
-    .footer-nav.settings-active .footer-nav-item:nth-child(2) {
-      flex: 3;
-      width: auto;
-      opacity: 1;
-      pointer-events: auto;
-    }
-    
-    .footer-nav-item.active, .footer-nav-item:hover {
-      color: #137fec;
-    }
-    .footer-nav-item span.material-icons {
-      font-size: 1.4rem;
-    }
     @keyframes fadeIn {
       from { opacity: 0; } to { opacity: 1; }
     }
@@ -484,7 +536,8 @@
                   if (timer) { clearTimeout(timer); }
 
                   if (clickCount >= requiredClicks) {
-                      toggleSettingsVisibility(); // 💾 정의된 함수 호출
+                      toggleSettingsFab()
+                                                                // toggleSettingsVisibility(); // 💾 정의된 함수 호출
                       clickCount = 0;
                       clearTimeout(timer);
                       timer = null;
@@ -502,13 +555,51 @@
           }
           // 🔑 [END] 설정 버튼 토글 트리거 리스너 추가
       });
-      // 💾 [START] 설정 토글 함수 정의
-      function toggleSettingsVisibility() {
-          const footerNav = document.querySelector('.footer-nav');
-          // .settings-active 클래스를 추가/제거하여 CSS 비율을 변경합니다.
-          footerNav.classList.toggle('settings-active'); 
-      }
-      // 💾 [END] 설정 토글 함수 정의
+
+    
+                                                  // 💾 [START] 설정 토글 함수 정의
+                                                  function toggleSettingsVisibility() {
+                                                      const footerNav = document.querySelector('.footer-nav');
+                                                      // .settings-active 클래스를 추가/제거하여 CSS 비율을 변경합니다.
+                                                      footerNav.classList.toggle('settings-active'); 
+                                                  }
+                                                  // 💾 [END] 설정 토글 함수 정의
+
+
+                            
+                            // 버튼을 토글하는 새로운 함수
+                            function toggleSettingsFab() {
+                                const todayBtn = document.getElementById('today-fab');
+                                const settingsBtn = document.getElementById('settings-fab');
+                            
+                                // 현재 settings 버튼이 숨겨져 있다면 (hidden 클래스가 있다면)
+                                if (settingsBtn.classList.contains('hidden')) {
+                                    // 1. settings 버튼 보이도록 준비 (display: flex)
+                                    settingsBtn.classList.remove('hidden');
+                            
+                                    // 2. today 버튼을 왼쪽으로 밀고 settings 버튼을 나타나게 하는 클래스 추가
+                                    todayBtn.classList.add('move-left');
+                                    settingsBtn.classList.add('fade-in-left');
+                            
+                                } else {
+                                    // 현재 settings 버튼이 보인다면 (다시 숨기기)
+                            
+                                    // 1. 애니메이션 클래스 제거 (원래 위치로 복귀 애니메이션)
+                                    todayBtn.classList.remove('move-left');
+                                    settingsBtn.classList.remove('fade-in-left');
+                            
+                                    // 2. 애니메이션 종료 후 display:none 처리
+                                    // transitionend 이벤트를 사용하여 애니메이션이 끝난 뒤 hidden 클래스를 추가
+                                    settingsBtn.addEventListener('transitionend', function handler() {
+                                        settingsBtn.classList.add('hidden');
+                                        settingsBtn.removeEventListener('transitionend', handler); // 이벤트 리스너 제거
+                                    });
+                                }
+                            }
+
+
+
+
     
       // 월/년 헤더를 업데이트합니다.
       function updateMonthHeader() {
