@@ -263,16 +263,41 @@
 
 
                                         
-                                        .fab-container {
-                                          position: fixed;
-                                          bottom: 25px; /* 하단 여백 */
-                                          right: 25px;  /* 우측 여백 */
-                                          display: flex;
-                                          flex-direction: row-reverse; /* Today 버튼이 항상 가장 오른쪽에 오도록 */
-                                          align-items: center;
-                                          z-index: 900;
-                                        }
-                                        
+                                                                                /* .fab-container {
+                                                                                  position: fixed;
+                                                                                  bottom: 25px; /* 하단 여백 */
+                                                                                  right: 25px;  /* 우측 여백 */
+                                                                                  display: flex;
+                                                                                  flex-direction: row-reverse; /* Today 버튼이 항상 가장 오른쪽에 오도록 */
+                                                                                  align-items: center;
+                                                                                  z-index: 900;
+                                                                                } */
+
+
+
+
+                                                        .fab-container {
+                                                          position: fixed !important;
+                                                          right: 16px !important; /* 우측 마진 */
+                                                          bottom: 16px !important; /* 하단 마진 */
+                                                          z-index: 9999 !important; /* 충분히 위로 */
+                                                          display: flex !important;
+                                                          gap: 12px;
+                                                          align-items: center;
+                                                          pointer-events: auto;
+                                                          /* iOS 안전영역 고려 */
+                                                          padding-right: env(safe-area-inset-right, 0);
+                                                          padding-bottom: env(safe-area-inset-bottom, 0);
+                                                        }
+    
+
+
+
+
+
+
+
+    
                                         .fab {
                                           width: 56px;
                                           height: 56px;
