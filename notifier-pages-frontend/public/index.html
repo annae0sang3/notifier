@@ -164,6 +164,17 @@
       gap: 10px;
       margin-top: 24px;
     }
+
+
+                                              
+                                              /* ❗ [추가] 닫기/저장 버튼을 묶는 래퍼 */
+                                                  .action-buttons {
+                                                    display: flex;
+                                                    gap: 10px;
+                                                  }
+
+
+    
     .button {
       border: none;
       border-radius: 8px; /* 모서리 통일 */
@@ -305,18 +316,18 @@
                                           transform: scale(1);
                                         }
                                         
-                                        /* [요청사항 6] 모달 버튼 영역 재정렬 */
-                                        .modal-buttons {
-                                          display: flex;
-                                          justify-content: space-between; /* 양쪽 끝으로 정렬 */
-                                          align-items: center;
-                                          margin-top: 24px;
-                                        }
+                                                        /* /* [요청사항 6] 모달 버튼 영역 재정렬 */
+                                                        .modal-buttons {
+                                                          display: flex;
+                                                          justify-content: space-between; /* 양쪽 끝으로 정렬 */
+                                                          align-items: center;
+                                                          margin-top: 24px;
+                                                        } */
                                         
-                                        .action-buttons {
-                                          display: flex;
-                                          gap: 10px; /* 닫기/저장 버튼 사이 간격 */
-                                        }
+                                                        /* .action-buttons {
+                                                          display: flex;
+                                                          gap: 10px; /* 닫기/저장 버튼 사이 간격 */
+                                                        } */
                                         
                                         /* [요청사항 6, 7] 도움말 아이콘 및 툴팁 스타일 */
                                         .help-container {
@@ -491,9 +502,9 @@
               <span id="help-tooltip-trigger" class="material-icons help-icon" onclick="toggleHelpTooltip()">help_outline</span>
               
               <div id="help-tooltip" class="modal-tooltip">
-                <p>1. 기준일은 근무주기의 첫 날(주간)로 설정 - 근주주기의 첫 날이 기준일이 됨.</p>
+                <p>1. 기준일은 근무주기의 첫 날(주간)로 설정\n  - 근주주기의 첫 날이 기준일이 됨.</p>
                 <p>2. 기준일부터 근무자 명단 순서로 당직 배정이됨.</p>
-                <p>3. 근무자가 홀수일 경우 abcabc 순서, 짝수일 경우 abcdbadc 순서</p>
+                <p>3. 근무자가 홀수일 경우 abcabc 순서,\n   짝수일 경우 abcdbadc 순서</p>
               </div>
             </div>
             
