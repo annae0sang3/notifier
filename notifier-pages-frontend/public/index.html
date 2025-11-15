@@ -276,26 +276,36 @@
 
 
 
-                                                        .fab-container {
-                                                          position: fixed !important;
-                                                          right: 16px !important; /* 우측 마진 */
-                                                          bottom: 16px !important; /* 하단 마진 */
-                                                          z-index: 9999 !important; /* 충분히 위로 */
-                                                          display: flex !important;
-                                                          gap: 12px;
-                                                          align-items: center;
-                                                          pointer-events: auto;
-                                                          /* iOS 안전영역 고려 */
-                                                          padding-right: env(safe-area-inset-right, 0);
-                                                          padding-bottom: env(safe-area-inset-bottom, 0);
-                                                        }
-    
-
-
-
-
-
-
+                                            .fab-container {
+                                              position: fixed !important;
+                                              right: calc(env(safe-area-inset-right, 0px) + 16px) !important;
+                                              bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important;
+                                              display: flex !important;
+                                              gap: 12px !important;
+                                              z-index: 9999 !important;
+                                              pointer-events: auto;
+                                            }
+                                            
+                                            /* 개별 FAB 버튼 */
+                                            .fab {
+                                              width: 55px;
+                                              height: 55px;
+                                              border-radius: 50%;
+                                              display: flex;
+                                              justify-content: center;
+                                              align-items: center;
+                                              background-color: #2196f3;
+                                              color: white;
+                                              font-size: 24px;
+                                              text-decoration: none;
+                                              box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+                                            }
+                                            
+                                            /* hover 추가 */
+                                            .fab:hover {
+                                              opacity: 0.9;
+                                            }
+                                            
 
     
                                         .fab {
