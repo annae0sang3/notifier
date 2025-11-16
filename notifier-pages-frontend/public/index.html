@@ -494,7 +494,7 @@
       let currentChatId = null; // 💥 현재 미니앱이 열린 채팅방 ID 저장할 전역 변수
 
       document.addEventListener('DOMContentLoaded', async () => {
-        console.log("DEBUG: DOMContentLoaded Start"); // ✅ 이 로그가 콘솔에 찍히는지 확인
+          console.log("DEBUG: DOMContentLoaded Start"); // ✅ 이 로그가 콘솔에 찍히는지 확인
           const headerElement = document.querySelector('.header');
           const mainContentElement = document.getElementById('main-content');
           const fabContainer = document.querySelector('.fab-container');                                                                                   
@@ -527,6 +527,24 @@
                                                       // let currentChatId = null;
           const tg = window.Telegram.WebApp;
           const initData = tg.initData; // 텔레그램이 자동으로 붙여주는 검증용 데이터 (안전한 데이터)
+        
+          // 💥💥💥 임시로 이 코드를 추가해서 initData를 화면에 직접 표시합니다. 💥💥💥
+          const debugDiv = document.createElement('div');
+          debugDiv.style.position = 'fixed';
+          debugDiv.style.bottom = '10px';
+          debugDiv.style.left = '10px';
+          debugDiv.style.right = '10px';
+          debugDiv.style.backgroundColor = 'rgba(0,0,0,0.8)';
+          debugDiv.style.color = 'white';
+          debugDiv.style.padding = '5px';
+          debugDiv.style.fontSize = '0.7em';
+          debugDiv.style.zIndex = '99999';
+          debugDiv.style.wordBreak = 'break-all';
+          debugDiv.textContent = `Full InitData: ${initData || 'Not Available'}`;
+          document.body.appendChild(debugDiv);
+          // 💥💥💥 여기까지 추가 💥💥💥
+        
+          console.log("DEBUG_FULL_INITDATA_FROM_FRONTEND:", initData); // 💥💥💥 이 줄을 추가!
           console.log("initData:", tg.initData);
           console.log("initDataUnsafe:", tg.initDataUnsafe);        
           //console.log(`DEBUG_PAGES_FETCH_URL: ${WORKER_API_BASE}/verify_params`);
