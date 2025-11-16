@@ -528,21 +528,21 @@
           const tg = window.Telegram.WebApp;
           const initData = tg.initData; // 텔레그램이 자동으로 붙여주는 검증용 데이터 (안전한 데이터)
         
-          // 💥💥💥 임시로 이 코드를 추가해서 initData를 화면에 직접 표시합니다. 💥💥💥
-          const debugDiv = document.createElement('div');
-          debugDiv.style.position = 'fixed';
-          debugDiv.style.bottom = '10px';
-          debugDiv.style.left = '10px';
-          debugDiv.style.right = '10px';
-          debugDiv.style.backgroundColor = 'rgba(0,0,0,0.8)';
-          debugDiv.style.color = 'white';
-          debugDiv.style.padding = '5px';
-          debugDiv.style.fontSize = '0.7em';
-          debugDiv.style.zIndex = '99999';
-          debugDiv.style.wordBreak = 'break-all';
-          debugDiv.textContent = `Full InitData: ${initData || 'Not Available'}`;
-          document.body.appendChild(debugDiv);
-          // 💥💥💥 여기까지 추가 💥💥💥
+          // // 💥💥💥 임시로 이 코드를 추가해서 initData를 화면에 직접 표시합니다. 💥💥💥
+          // const debugDiv = document.createElement('div');
+          // debugDiv.style.position = 'fixed';
+          // debugDiv.style.bottom = '10px';
+          // debugDiv.style.left = '10px';
+          // debugDiv.style.right = '10px';
+          // debugDiv.style.backgroundColor = 'rgba(0,0,0,0.8)';
+          // debugDiv.style.color = 'white';
+          // debugDiv.style.padding = '5px';
+          // debugDiv.style.fontSize = '0.7em';
+          // debugDiv.style.zIndex = '99999';
+          // debugDiv.style.wordBreak = 'break-all';
+          // debugDiv.textContent = `Full InitData: ${initData || 'Not Available'}`;
+          // document.body.appendChild(debugDiv);
+          // // 💥💥💥 여기까지 추가 💥💥💥
         
           console.log("DEBUG_FULL_INITDATA_FROM_FRONTEND:", initData); // 💥💥💥 이 줄을 추가!
           console.log("initData:", tg.initData);
@@ -836,7 +836,7 @@
               console.warn('사용자/채팅방 ID가 없어 스케줄을 로드할 수 없습니다.');
               document.getElementById('main-content').innerHTML = `
                   <p style="text-align: center; color: #dc3545; margin-top: 50px;">
-                      사용자/채팅방 인증이 필요하거나 실패했습니다.\n ${currentUserId}, ${currentChatId}
+                      사용자/채팅방 인증이 필요하거나 실패했습니다.
                   </p>
               `;
               return;
