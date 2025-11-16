@@ -343,11 +343,33 @@
         /* 필요하면 설정 제목 부분에만 추가적인 스타일 적용 가능 */
         margin-top: 10px; /* 상단 여백 추가 등 */
     }
-    #access-denied {
-      display: none; /* 💥💥💥 초기에는 display: none;으로 숨김 💥💥💥 */
-      margin-top: 50px; 
-      color: #dc3545; 
-      font-weight:600;
+                                                                            /* #access-denied {
+                                                                              display: none; /* 💥💥💥 초기에는 display: none;으로 숨김 💥💥💥 */
+                                                                              margin-top: 50px; 
+                                                                              color: #dc3545; 
+                                                                              font-weight:600;
+                                                                            } */
+    #telegram-info, #access-denied {
+    position: fixed; /* 화면에 고정 */
+    top: 0;
+    left: 0;
+    width: 100vw;   /* 뷰포트 너비 전체 */
+    height: 100vh;  /* 뷰포트 높이 전체 */
+    display: flex;  /* 내용을 가운데 정렬하기 위해 flex 사용 */
+    justify-content: center; /* 수평 가운데 */
+    align-items: center;     /* 수직 가운데 */
+    background-color: rgba(255, 255, 255, 0.95); /* 반투명 흰색 배경으로 다른 UI 가리기 */
+    z-index: 1000; /* 다른 모든 UI 요소 위에 오도록 z-index 높게 설정 */
+    color: #333;
+    font-size: 1.2em;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box; /* 패딩이 너비/높이에 포함되도록 */
+    }
+    
+    /* 추가적으로 access-denied 내 p 태그에 대한 스타일도 조정할 수 있음 */
+    #access-denied p {
+        color: #dc3545; /* 빨간색 오류 메시지 */
     }
  
     #toast {
@@ -427,9 +449,10 @@
               <span id="help-tooltip-trigger" class="material-icons help-icon" onclick="toggleHelpTooltip()">help_outline</span>
               
               <div id="help-tooltip" class="modal-tooltip">
-                <p>1. 기준일을 근무주기의 첫 날(주간)로 설정해야 함.</p>
-                <p>2. 기준일부터 근무자 명단 순서로 당직 배정</p>
-                <p>3. 근무자가 홀수일 경우에는 123123 순서,\n   짝수일 경우 12342143 순서</p>
+                <p>1. 기준일은 근무주기의 첫 날(주)로 설정할 것.</p>
+                <p>2. 기준일부터 근무자 명단 순서로 당직 배정 됨.</p>
+                <p>3. 근무자가 홀수일 경우에는 123123 순서,
+                      짝수일 경우에는 12342143 순서로 반복됨.</p>
               </div>
             </div>
             
