@@ -792,7 +792,7 @@
               console.warn('사용자/채팅방 ID가 없어 스케줄을 로드할 수 없습니다.');
               document.getElementById('main-content').innerHTML = `
                   <p style="text-align: center; color: #dc3545; margin-top: 50px;">
-                      사용자/채팅방 인증이 필요하거나 실패했습니다.
+                      사용자/채팅방 인증이 필요하거나 실패했습니다.\n ${currentUserId}, ${currentChatId}
                   </p>
               `;
               return;
