@@ -349,6 +349,10 @@
                                                                               color: #dc3545; 
                                                                               font-weight:600;
                                                                             } */
+    /* 💥💥💥 새로운 CSS 추가: 스크립트가 실행되기 전까지 모든 메인 콘텐츠를 숨깁니다. 💥💥💥 */
+    body > *:not(#telegram-info):not(#access-denied) {
+        display: none;
+    }
     #telegram-info, #access-denied {
     position: fixed !important; /* 화면에 고정 */
     top: 0 !important;
