@@ -543,7 +543,7 @@
 
               if (verificationResult.ok) {       // ✅ 검증 성공 시                  
                   const user = verificationResult.user || {}; // 백엔드에서 파싱된 user 객체
-                  currentUserId = user.id; // // 백엔드에서 검증된 user.id 사용
+                  currentUserId = user; // // 백엔드에서 검증된 user.id 사용
                   currentChatId = verificationResult.chat_id; // 백엔드에서 검증된 chat_id 사용 (그룹인 경우)
                                                                                 // currentChatId = chatId; // 💥 전역 변수에 저장
                   console.log(`✓ 인증 완료! 사용자 ID: ${currentUserId}, 그룹 ID: ${currentChatId}`);
