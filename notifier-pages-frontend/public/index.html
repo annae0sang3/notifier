@@ -350,9 +350,9 @@
                                                                               font-weight:600;
                                                                             } */
     /* 💥💥💥 새로운 CSS 추가: 스크립트가 실행되기 전까지 모든 메인 콘텐츠를 숨깁니다. 💥💥💥 */
-    body > *:not(#telegram-info):not(#access-denied) {
+    /* body > *:not(#telegram-info):not(#access-denied) {
         display: none;
-    }
+    } */
     #telegram-info, #access-denied {
     position: fixed !important; /* 화면에 고정 */
     top: 0 !important;
@@ -416,7 +416,7 @@
     <!-- ❗ 인증 실패 시 메시지 표시 -->
     <div id="access-denied" margin-top: 50px; color: #dc3545; font-weight:600;">
       <!-- JavaScript에서 동적으로 내용 채움 -->
-      <p>이 미니앱은 특정 텔레그램 단체방 멤버만 접근할 수 없습니다.</p>
+      <p>이 미니앱은 멤버만 접근할 수 있습니다.</p>
     </div>
 
     <div id="main-content" class="schedule-list"></div>
