@@ -586,6 +586,9 @@
               accessDeniedDiv.querySelector('p').textContent = `🚨 인증 중 네트워크 오류: ${error.message}`;
               accessDeniedDiv.style.display = 'block';
               telegramInfoDiv.style.display = 'none'; // 에러 시 정보 로딩 메시지 숨김
+              headerElement.style.display = 'none';
+              mainContentElement.style.display = 'none';
+              fabContainer.style.display = 'none';
               // window.Telegram.WebApp.close();
           }
        
