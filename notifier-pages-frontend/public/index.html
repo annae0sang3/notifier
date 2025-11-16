@@ -427,9 +427,9 @@
               <span id="help-tooltip-trigger" class="material-icons help-icon" onclick="toggleHelpTooltip()">help_outline</span>
               
               <div id="help-tooltip" class="modal-tooltip">
-                <p>1. 기준일은 근무주기의 첫 날(주간)로 설정 - 근주주기의 첫 날이 기준일이 됨.</p>
-                <p>2. 기준일부터 근무자 명단 순서로 당직 배정이됨.</p>
-                <p>3. 근무자가 홀수일 경우 abcabc 순서, 짝수일 경우 abcdbadc 순서</p>
+                <p>1. 기준일을 근무주기의 첫 날(주간)로 설정해야 함.</p>
+                <p>2. 기준일부터 근무자 명단 순서로 당직 배정</p>
+                <p>3. 근무자가 홀수일 경우에는 123123 순서,\n   짝수일 경우 12342143 순서</p>
               </div>
             </div>
             
@@ -500,8 +500,8 @@
                                                                       // const chatId = urlParams.get('chat_id');
                                                                       // const signature = urlParams.get('sig'); // 보안 서명
                                                                       // console.log(`DEBUG_PARAMS: userId=${userId}, chatId=${chatId}, signature=${signature}`);
-          let currentUserId = null;
-          let currentChatId = null;
+                                                      // let currentUserId = null;
+                                                      // let currentChatId = null;
           const tg = window.Telegram.WebApp;
           const initData = tg.initData; // 텔레그램이 자동으로 붙여주는 검증용 데이터 (안전한 데이터)
           console.log("initData:", tg.initData);
