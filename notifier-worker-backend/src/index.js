@@ -1,8 +1,17 @@
-// Cloudflare KV 바인딩 이름: SETTINGS_KV
-// GROUP_CHAT_ID  미니앱 접근 제어 대상 그룹 (이 그룹 멤버만 사용 가능)  ->  GROUP_CHAT_ID_TO_ENFORCE
-// CHAT_ID  봇이 주기적 메시지를 보낼 대상 그룹/채팅방  (스케줄러 동작 시 필수)  ->ELEGRAM_BOT_DEFAULT_CHAT_ID
+// Bindings {
+//    Type: KV namespace 
+//    Name: SETTINGS_KV
+//    Value: NOTIFIER-KV
+// }
 
-// let _inMemorySettings = null;
+// Workers KV: NOTIFIER-KV (KV pairs: dayDutyRoster, night2DutyRoster, settings)
+
+// env VAR {
+//    BOT_TOKEN
+//    BOT_USERNAME
+//    GROUP_CHAT_ID  미니앱 접근 제어 대상 그룹 (이 그룹 멤버만 사용 가능)  ->  GROUP_CHAT_ID_TO_ENFORCE
+// }
+
 const DEFAULT_USERS = ['1st', '2nd', '3rd', '4th'];
 
 function parseDateYMD(s) {  // 📅 헬퍼: YYYY-MM-DD 형식의 문자열을 UTC Date 객체로 변환
@@ -59,74 +68,74 @@ async function sendTelegramMessage(env, message, chatId, buttons = null) {    //
  }
 }
 
-// ✅ 텔레그램 콜백 쿼리 응답 헬퍼
-async function answerCallbackQuery(env, callbackQueryId, text, showAlert = false) {
- const url = `https://api.telegram.org/bot${env.BOT_TOKEN}/answerCallbackQuery`;
- const headers = { 'Content-Type': 'application/json' };
- const body = {
-   callback_query_id: callbackQueryId,
-   text: text,
-   show_alert: showAlert
- };
- try {
-   const response = await fetch(url, {
-     method: 'POST',
-     headers: headers,
-     body: JSON.stringify(body),
-   });
-   if (!response.ok) {
-     const errorData = await response.json().catch(() => ({}));
-     console.error('Failed to answer callback query:', errorData);
-   }
- } catch (e) {
-   console.error('Error answering callback query:', e);
- }
-}
+// // ✅ 텔레그램 콜백 쿼리 응답 헬퍼
+// async function answerCallbackQuery(env, callbackQueryId, text, showAlert = false) {
+//  const url = `https://api.telegram.org/bot${env.BOT_TOKEN}/answerCallbackQuery`;
+//  const headers = { 'Content-Type': 'application/json' };
+//  const body = {
+//    callback_query_id: callbackQueryId,
+//    text: text,
+//    show_alert: showAlert
+//  };
+//  try {
+//    const response = await fetch(url, {
+//      method: 'POST',
+//      headers: headers,
+//      body: JSON.stringify(body),
+//    });
+//    if (!response.ok) {
+//      const errorData = await response.json().catch(() => ({}));
+//      console.error('Failed to answer callback query:', errorData);
+//    }
+//  } catch (e) {
+//    console.error('Error answering callback query:', e);
+//  }
+// }
 
-async function editMessageReplyMarkup(env, chatId, messageId, inlineKeyboard) {   // Helper: 메시지 인라인 키보드 수정
- const url = `https://api.telegram.org/bot${env.BOT_TOKEN}/editMessageReplyMarkup`;
- const headers = { 'Content-Type': 'application/json' };
- const body = {
-     chat_id: chatId,
-     message_id: messageId,
-     reply_markup: {
-         inline_keyboard: inlineKeyboard
-     }
- };
- try {
-     const response = await fetch(url, {
-         method: 'POST',
-         headers: headers,
-         body: JSON.stringify(body),
-     });
-     if (!response.ok) {
-         const errorData = await response.json();
-         console.error('Failed to edit message reply markup:', errorData);
-         throw new Error(`Telegram API error: ${JSON.stringify(errorData)}`);
-     }
- } catch (e) {
-     console.error('Error editing message reply markup:', e);
- }
-}
+// async function editMessageReplyMarkup(env, chatId, messageId, inlineKeyboard) {   // Helper: 메시지 인라인 키보드 수정
+//  const url = `https://api.telegram.org/bot${env.BOT_TOKEN}/editMessageReplyMarkup`;
+//  const headers = { 'Content-Type': 'application/json' };
+//  const body = {
+//      chat_id: chatId,
+//      message_id: messageId,
+//      reply_markup: {
+//          inline_keyboard: inlineKeyboard
+//      }
+//  };
+//  try {
+//      const response = await fetch(url, {
+//          method: 'POST',
+//          headers: headers,
+//          body: JSON.stringify(body),
+//      });
+//      if (!response.ok) {
+//          const errorData = await response.json();
+//          console.error('Failed to edit message reply markup:', errorData);
+//          throw new Error(`Telegram API error: ${JSON.stringify(errorData)}`);
+//      }
+//  } catch (e) {
+//      console.error('Error editing message reply markup:', e);
+//  }
+// }
 
-async function generateSignature(userId, chatId, botToken) {    // Helper: URL 파라미터 서명 생성 (user_id, chat_id 위변조 방지)
- const dataToSign = `${userId}:${chatId}`;    // 서명할 데이터는 userId와 chatId를 콜론으로 연결한 문자열
- const secretKey = await crypto.subtle.digest(  // 봇 토큰으로 HMAC 시크릿 키 생성
-     'SHA-256',
-     new TextEncoder().encode(botToken)
- );
- const key = await crypto.subtle.importKey(
-     'raw',
-     secretKey,
-     { name: 'HMAC', hash: 'SHA-256' },
-     false,
-     ['sign']
- );
- const signatureBuffer = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(dataToSign));  // 데이터 서명
- return Array.from(new Uint8Array(signatureBuffer))  // 서명 결과(ArrayBuffer)를 16진수 문자열로 변환
-     .map((b) => b.toString(16).padStart(2, '0'))
-     .join('');
-}
+// async function generateSignature(userId, chatId, botToken) {    // Helper: URL 파라미터 서명 생성 (user_id, chat_id 위변조 방지)
+//  const dataToSign = `${userId}:${chatId}`;    // 서명할 데이터는 userId와 chatId를 콜론으로 연결한 문자열
+//  const secretKey = await crypto.subtle.digest(  // 봇 토큰으로 HMAC 시크릿 키 생성
+//      'SHA-256',
+//      new TextEncoder().encode(botToken)
+//  );
+//  const key = await crypto.subtle.importKey(
+//      'raw',
+//      secretKey,
+//      { name: 'HMAC', hash: 'SHA-256' },
+//      false,
+//      ['sign']
+//  );
+//  const signatureBuffer = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(dataToSign));  // 데이터 서명
+//  return Array.from(new Uint8Array(signatureBuffer))  // 서명 결과(ArrayBuffer)를 16진수 문자열로 변환
+//      .map((b) => b.toString(16).padStart(2, '0'))
+//      .join('');
+// }
 
 async function getDutyInfoFromSettingsKV(targetDate, env) {   // 💥 SETTINGS_KV 사용하여 당직 정보 계산
  let settings = null;
@@ -307,8 +316,6 @@ async function handleSettings(request, env) {   // ⚙️ 설정 GET/POST 핸들
      await env.SETTINGS_KV.put("dayDutyRoster", JSON.stringify(dayDutyRoster));
      await env.SETTINGS_KV.put("night2DutyRoster", JSON.stringify(night2DutyRoster));
 
-    //  _inMemorySettings = settings;
-
      return new Response(JSON.stringify({ ok: true }), {
        status: 200,
        headers: {
@@ -331,9 +338,6 @@ async function handleSettings(request, env) {   // ⚙️ 설정 GET/POST 핸들
          return new Response(value, { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
        }
      }
-    //  if (_inMemorySettings) {
-    //    return new Response(JSON.stringify(_inMemorySettings), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
-    //  }
      return new Response(JSON.stringify({}), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
    } catch (e) {
      console.error("Settings GET error:", e);
@@ -530,109 +534,257 @@ async function handleRootManualFetch(env) {   // /api/schedule와 유사하게 �
  });
 }
 
-async function handleVerifyParams(request, env, GROUP_CHAT_ID_ENV_VAR) {    // 💥💥💥 URL 파라미터 기반 검증 엔드포인트 💥💥💥
- let rawBody = null; // 요청 본문의 Raw 데이터를 저장할 변수
- let bodyJson = null; // Raw 데이터를 JSON으로 파싱한 결과
- try {
-     // 1. 요청 본문을 텍스트로 읽어 로깅
-     // request.text()를 호출하면 body 스트림이 소모되므로, 이후 request.json()을 직접 호출할 수 없음.
-     // 대신 JSON.parse()를 사용하여 수동으로 파싱.
-     rawBody = await request.text();
-     console.log("DEBUG_WORKER_RECEIVED_RAW_BODY:", rawBody); // Workers에 들어온 실제 Raw Body 로그
-     // 2. Raw Body를 JSON 객체로 파싱 시도
-     bodyJson = JSON.parse(rawBody);
- } catch (e) {
-     console.error("Verification error - Failed to parse request body as JSON:", e);
-     console.error("Received raw body that caused parsing error:", rawBody); // 파싱 실패한 raw body도 로깅
-     return new Response(JSON.stringify({ ok: false, reason: 'Invalid request body format (expected JSON).' }), {
-         status: 400, // Bad Request
-         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-     });
- }
- const { userId, chatId, signature } = bodyJson; // 파싱된 JSON에서 필요한 값 추출
+// async function handleVerifyParams(request, env, GROUP_CHAT_ID_ENV_VAR) {    // 💥💥💥 URL 파라미터 기반 검증 엔드포인트 💥💥💥
+//  let rawBody = null; // 요청 본문의 Raw 데이터를 저장할 변수
+//  let bodyJson = null; // Raw 데이터를 JSON으로 파싱한 결과
+//  try {
+//      // 1. 요청 본문을 텍스트로 읽어 로깅
+//      // request.text()를 호출하면 body 스트림이 소모되므로, 이후 request.json()을 직접 호출할 수 없음.
+//      // 대신 JSON.parse()를 사용하여 수동으로 파싱.
+//      rawBody = await request.text();
+//      console.log("DEBUG_WORKER_RECEIVED_RAW_BODY:", rawBody); // Workers에 들어온 실제 Raw Body 로그
+//      // 2. Raw Body를 JSON 객체로 파싱 시도
+//      bodyJson = JSON.parse(rawBody);
+//  } catch (e) {
+//      console.error("Verification error - Failed to parse request body as JSON:", e);
+//      console.error("Received raw body that caused parsing error:", rawBody); // 파싱 실패한 raw body도 로깅
+//      return new Response(JSON.stringify({ ok: false, reason: 'Invalid request body format (expected JSON).' }), {
+//          status: 400, // Bad Request
+//          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+//      });
+//  }
+//  const { userId, chatId, signature } = bodyJson; // 파싱된 JSON에서 필요한 값 추출
 
- if (!userId || !chatId || !signature) {   // 3. 필수 파라미터 누락 확인
-     console.error("Verification error - Missing required parameters in JSON body:", { userId, chatId, signature });
-     return new Response(JSON.stringify({ ok: false, reason: 'Missing userId, chatId or signature in request body.' }), {
-         status: 400, // Bad Request
-         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-     });
- }
- try {
-     const expectedSignature = await generateSignature(userId, chatId, env.BOT_TOKEN);     // 4. ✨ 보안 강화: 시그니처 재검증
-     if (expectedSignature !== signature) {
-         console.warn(`Verification error - Invalid signature for userId=${userId}, chatId=${chatId}. Expected: ${expectedSignature}, Got: ${signature}`);
-         return new Response(JSON.stringify({ ok: false, reason: 'Invalid signature.' }), {
-             status: 403, // 접근 금지: 위변조 의심
-             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-         });
-     }
-     // 5. 그룹 멤버십 확인 (GROUP_CHAT_ID_ENV_VAR 환경 변수가 설정된 경우)
-     // GROUP_CHAT_ID_ENV_VAR는 Workers 환경 변수로 설정된 '접근 허용 그룹 ID
-     if (GROUP_CHAT_ID_ENV_VAR) { // 환경 변수가 설정된 경우에만 멤버십 검증 진행
-         if (String(chatId) !== String(GROUP_CHAT_ID_ENV_VAR)) { // 문자열 비교를 위해 String()으로 형변환
-             console.warn(`Verification error - Mini App launched from non-allowed chat. Expected chat_id: ${GROUP_CHAT_ID_ENV_VAR}, Got: ${chatId}`);
-             return new Response(
-                 JSON.stringify({ ok: false, reason: 'This Mini App can only be launched from a specific group chat.' }),
-                 {
-                     status: 403, // 접근 금지
-                     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-                 }
-             );
-         }
-         const tgResp = await fetch(
-             `https://api.telegram.org/bot${env.BOT_TOKEN}/getChatMember?chat_id=${GROUP_CHAT_ID_ENV_VAR}&user_id=${userId}`
-         );         // 해당 그룹의 멤버인지 텔레그램 API를 통해 확인
-         const tgData = await tgResp.json();
-         if (!tgData.ok || ['left', 'kicked'].includes(tgData.result.status)) {
-             console.warn(`Verification error - User ${userId} is not a member of the allowed group ${GROUP_CHAT_ID_ENV_VAR}. Status: ${tgData.result ? tgData.result.status : 'API error'}`);
-             return new Response(
-                 JSON.stringify({ ok: false, reason: 'You are not a member of the allowed group.' }),
-                 {
-                     status: 403, // 접근 금지
-                     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-                 }
-             );
-         }  
+//  if (!userId || !chatId || !signature) {   // 3. 필수 파라미터 누락 확인
+//      console.error("Verification error - Missing required parameters in JSON body:", { userId, chatId, signature });
+//      return new Response(JSON.stringify({ ok: false, reason: 'Missing userId, chatId or signature in request body.' }), {
+//          status: 400, // Bad Request
+//          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+//      });
+//  }
+//  try {
+//      const expectedSignature = await generateSignature(userId, chatId, env.BOT_TOKEN);     // 4. ✨ 보안 강화: 시그니처 재검증
+//      if (expectedSignature !== signature) {
+//          console.warn(`Verification error - Invalid signature for userId=${userId}, chatId=${chatId}. Expected: ${expectedSignature}, Got: ${signature}`);
+//          return new Response(JSON.stringify({ ok: false, reason: 'Invalid signature.' }), {
+//              status: 403, // 접근 금지: 위변조 의심
+//              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+//          });
+//      }
+//      // 5. 그룹 멤버십 확인 (GROUP_CHAT_ID_ENV_VAR 환경 변수가 설정된 경우)
+//      // GROUP_CHAT_ID_ENV_VAR는 Workers 환경 변수로 설정된 '접근 허용 그룹 ID
+//      if (GROUP_CHAT_ID_ENV_VAR) { // 환경 변수가 설정된 경우에만 멤버십 검증 진행
+//          if (String(chatId) !== String(GROUP_CHAT_ID_ENV_VAR)) { // 문자열 비교를 위해 String()으로 형변환
+//              console.warn(`Verification error - Mini App launched from non-allowed chat. Expected chat_id: ${GROUP_CHAT_ID_ENV_VAR}, Got: ${chatId}`);
+//              return new Response(
+//                  JSON.stringify({ ok: false, reason: 'This Mini App can only be launched from a specific group chat.' }),
+//                  {
+//                      status: 403, // 접근 금지
+//                      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+//                  }
+//              );
+//          }
+//          const tgResp = await fetch(
+//              `https://api.telegram.org/bot${env.BOT_TOKEN}/getChatMember?chat_id=${GROUP_CHAT_ID_ENV_VAR}&user_id=${userId}`
+//          );         // 해당 그룹의 멤버인지 텔레그램 API를 통해 확인
+//          const tgData = await tgResp.json();
+//          if (!tgData.ok || ['left', 'kicked'].includes(tgData.result.status)) {
+//              console.warn(`Verification error - User ${userId} is not a member of the allowed group ${GROUP_CHAT_ID_ENV_VAR}. Status: ${tgData.result ? tgData.result.status : 'API error'}`);
+//              return new Response(
+//                  JSON.stringify({ ok: false, reason: 'You are not a member of the allowed group.' }),
+//                  {
+//                      status: 403, // 접근 금지
+//                      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+//                  }
+//              );
+//          }  
 
-         const userFirstName = (tgData.result.user && tgData.result.user.first_name) 
-                               ? tgData.result.user.first_name 
-                               : `User ${userId}`;
-         const user = { id: userId, status: tgData.result.status, first_name: userFirstName };
+//          const userFirstName = (tgData.result.user && tgData.result.user.first_name) 
+//                                ? tgData.result.user.first_name 
+//                                : `User ${userId}`;
+//          const user = { id: userId, status: tgData.result.status, first_name: userFirstName };
 
-         return new Response(
-             JSON.stringify({ ok: true, user: user, chat_id: chatId }),
-             { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-         );
-     } else {     // GROUP_CHAT_ID_ENV_VAR 환경 변수가 설정되지 않은 경우    
-         console.log("Group chat membership not enforced (GROUP_CHAT_ID not set in Workers env). Allowing access.");
-         return new Response(
-             JSON.stringify({ ok: true, user: { id: userId, first_name: `User ${userId}` }, chat_id: chatId, message: 'Group chat membership not enforced (GROUP_CHAT_ID not set).' }),
-             { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-         );
-     }
- } catch (err) {
-     console.error("Verification error - Unhandled exception:", err);
-     return new Response(
-         JSON.stringify({ ok: false, error: String(err) }),
-         { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-     );
- }
+//          return new Response(
+//              JSON.stringify({ ok: true, user: user, chat_id: chatId }),
+//              { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+//          );
+//      } else {     // GROUP_CHAT_ID_ENV_VAR 환경 변수가 설정되지 않은 경우    
+//          console.log("Group chat membership not enforced (GROUP_CHAT_ID not set in Workers env). Allowing access.");
+//          return new Response(
+//              JSON.stringify({ ok: true, user: { id: userId, first_name: `User ${userId}` }, chat_id: chatId, message: 'Group chat membership not enforced (GROUP_CHAT_ID not set).' }),
+//              { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+//          );
+//      }
+//  } catch (err) {
+//      console.error("Verification error - Unhandled exception:", err);
+//      return new Response(
+//          JSON.stringify({ ok: false, error: String(err) }),
+//          { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+//      );
+//  }
+// }
+
+// Telegram WebApp initData 검증 헬퍼 함수
+async function verifyTelegramWebAppInitData(initData, botToken) {
+  // initData를 '&'로 분리하고, hash 파라미터를 제외한 나머지를 정렬하여 'check_string' 생성
+  const params = new URLSearchParams(initData);
+  const hash = params.get('hash');
+  params.delete('hash'); // hash는 검증 대상이 아니므로 제외
+
+  // URLSearchParams는 자동으로 정렬되지 않으므로, 직접 정렬해야 함
+  // 'auth_date', 'query_id', 'user' 등의 파라미터가 모두 포함됨
+  let dataCheckArray = [];
+  for (const [key, value] of params.entries()) {
+    dataCheckArray.push(`${key}=${value}`);
+  }
+  dataCheckArray.sort(); // 키를 알파벳 순서로 정렬
+  const dataCheckString = dataCheckArray.join('\n'); // 각 항목을 줄바꿈으로 연결
+
+  // secret key 생성: HMAC-SHA256 (botToken을 기반으로 생성)
+  const encoder = new TextEncoder();
+  const secretKeyRaw = encoder.encode('WebAppData'); // "WebAppData" 문자열을 인코딩
+  const secretKeyForHmac = await crypto.subtle.importKey( // CryptoKey 객체 생성
+    'raw',
+    secretKeyRaw,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  // 🚨 수정! 첫 번째 서명은 secretKeyForHmac을 사용하고, 결과는 ArrayBuffer임.
+  const hmacKeyArrayBuffer = await crypto.subtle.sign(
+    'HMAC',
+    secretKeyForHmac, // 👈 CryptoKey 객체 사용
+    encoder.encode(botToken)
+  );
+
+  // 🚨 hmacKeyArrayBuffer (ArrayBuffer)를 다시 CryptoKey로 임포트해야 합니다.
+  const hmacKey = await crypto.subtle.importKey(
+    'raw',
+    hmacKeyArrayBuffer, // 👈 ArrayBuffer를 가져와서
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  // data_check_string과 hmacKey를 사용하여 최종 해시 계산
+  const calculatedHashBuffer = await crypto.subtle.sign(
+    'HMAC',
+    hmacKey, // 👈 CryptoKey 객체 사용
+    encoder.encode(dataCheckString)
+  );
+
+  const calculatedHash = Array.from(new Uint8Array(calculatedHashBuffer))
+  .map(b => b.toString(16).padStart(2, '0'))
+  .join('');
+
+  if (calculatedHash === hash) {
+    // initData 파싱하여 필요한 정보 (user, chat_id 등) 추출
+    const parsedInitData = Object.fromEntries(new URLSearchParams(initData).entries());
+    let user = null;
+    let chat_id = null; // chat_id도 추출
+    
+    if (parsedInitData.user) {
+        user = JSON.parse(parsedInitData.user);
+    }
+    // chat_instance는 프라이빗 채팅에서 웹 앱을 열었을 때 오는 고유 ID (그룹 채팅 ID와는 다름)
+    // 그룹 채팅에서 열었을 경우 'chat' 필드에 정보가 담김.
+    if (parsedInitData.chat_type === 'supergroup' || parsedInitData.chat_type === 'group' || parsedInitData.chat_type === 'channel' || parsedInitData.chat_type === 'sender' ) {
+      // chat 필드가 없으므로 start_param에서 chatId를 추출
+      if (parsedInitData.start_param) {
+          const startParamValue = decodeURIComponent(parsedInitData.start_param);
+          const parts = startParamValue.split('_'); // 'from_schedule_-1003007469321' -> ['from', 'schedule', '-1003007469321']
+          if (parts.length >= 3 && parts[0] === 'from' && parts[1] === 'schedule') {
+              const extractedChatId = parts[2];
+              // extractedChatId가 실제 숫자 형태의 그룹 ID인지 간단히 검증
+              if (!isNaN(extractedChatId) && extractedChatId.startsWith('-100')) {
+                  chat_id = extractedChatId;
+                  console.log("DEBUG_CHAT_ID_FROM_START_PARAM_PRIORITY:", chat_id); // 🚨 로그 추가
+              } else {
+                  console.warn("DEBUG_INVALID_EXTRACTED_CHAT_ID_FROM_START_PARAM:", extractedChatId);
+              }
+          } else {
+               console.warn("DEBUG_MALFORMED_START_PARAM:", startParamValue);
+          }
+      } else {
+          console.warn("DEBUG_CHAT_TYPE_WITHOUT_START_PARAM:", parsedInitData.chat_type);
+      }
+    } else {
+        // 프라이빗 채팅 또는 기타 chat_type
+        // 이 경우 chat_id를 null로 두거나 user.id를 사용할지 결정.
+        // 케이오님 프로젝트에서는 그룹이 필수이므로 이 경우에도 chat_id는 null.
+        console.log("DEBUG_NON_GROUP_CHAT_TYPE:", parsedInitData.chat_type);
+    }
+    
+    // 만약 start_param에서 chat_id를 추출하지 못했고, chat 필드가 있다면 거기서 시도
+    // (이 부분이 원래 있었던 부분인데, 위 로직보다 후순위가 됨)
+    if (chat_id === null && parsedInitData.chat) { 
+      try {
+          const chatData = JSON.parse(parsedInitData.chat);
+          if (chatData.id) {
+              chat_id = chatData.id;
+              console.log("DEBUG_CHAT_ID_FROM_CHAT_FIELD_FALLBACK:", chat_id); // 🚨 로그 추가
+          }
+      } catch (e) {
+          console.error("DEBUG_CHAT_FIELD_PARSE_ERROR:", e);
+      }
+    } else if (chat_id === null) {
+        console.log("DEBUG_CHAT_FIELD_MISSING_AFTER_START_PARAM_ATTEMPT."); // chat 필드도 없는 경우
+    }
+  
+
+    return { ok: true, user: user, chat_id: chat_id };
+  } else {
+    return { ok: false, reason: 'initData hash 불일치' };
+  }
 }
 
 
+// 🚀 '/verify_initdata' 엔드포인트 핸들러
+async function handleVerifyInitData(request, env, GROUP_CHAT_ID_TO_ENFORCE) {
+  console.log("DEBUG: handleVerifyInitData called");
+  console.log("DEBUG: GROUP_CHAT_ID_TO_ENFORCE:", GROUP_CHAT_ID_TO_ENFORCE);
+  const { initData } = await request.json(); // 프론트엔드에서 받은 initData 문자열
+  console.log("DEBUG_RECEIVED_INITDATA_AT_BACKEND:", initData);
 
+  // 봇 토큰은 환경 변수로 설정되어야 함
+  const BOT_TOKEN = env.BOT_TOKEN; // Cloudflare Worker 환경 변수 (BOT_TOKEN)에서 가져옴
+  if (!BOT_TOKEN) {
+    return new Response(JSON.stringify({ ok: false, reason: '백엔드 구성 오류: BOT_TOKEN 누락' }), {
+      status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    });
+  }
 
+  const verification = await verifyTelegramWebAppInitData(initData, BOT_TOKEN);
 
+  if (!verification.ok) {
+    return new Response(JSON.stringify(verification), {
+      status: 403, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    });
+  }
 
+  // 이제 verification.user, verification.chat_id 사용 가능
+  const userId = verification.user ? verification.user.id : null;
+  const chatId = verification.chat_id; // 그룹 채팅의 경우 여기에 ID가 들어있음
+  console.log("DEBUG_FINAL_BACKEND_RESPONSE:", JSON.stringify({ ok: true, user: verification.user, chat_id: chatId }));
+ 
+  // 🚨 특정 그룹 채팅에서만 미니앱을 허용
+  if (GROUP_CHAT_ID_TO_ENFORCE && String(chatId) !== GROUP_CHAT_ID_TO_ENFORCE) {
+    return new Response(JSON.stringify({ ok: false, reason: `허용되지 않은 그룹 채팅 (${chatId})` }), {
+      status: 403, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    });
+  }
 
+  // 성공적으로 검증된 경우 user 객체와 chat_id 반환
+  return new Response(JSON.stringify({ ok: true, user: verification.user, chat_id: chatId }), {
+    status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+  });
+}
 
 export default {
 
  async fetch(request, env, ctx) {  // 🚀 API 요청 처리
    const url = new URL(request.url);
    const GROUP_CHAT_ID_TO_ENFORCE = env.GROUP_CHAT_ID ? String(env.GROUP_CHAT_ID) : null;
-   const TELEGRAM_BOT_DEFAULT_CHAT_ID = env.CHAT_ID;
    if (request.method === 'OPTIONS') {   // ⚙️ 💥💥💥 가장 먼저 OPTIONS 프리플라이트 요청 처리 (CORS) 💥💥💥
        return new Response(null, {
            status: 204, // No Content 상태 코드로 응답 (성공적인 프리플라이트 응답)
@@ -662,34 +814,19 @@ export default {
        const userId = callbackQuery.from.id;
        const messageId = callbackQuery.message.message_id;
        console.log(`Callback query received: ${data}`);
-       switch (data) {
-         case 'request_mini_app_access':
-           await answerCallbackQuery(env, callbackQueryId, '미니앱을 준비 중입니다...');
-           const miniAppBaseUrl = 'https://notifier-pages-frontend.pages.dev/';
-           const signature = await generateSignature(userId, messageChatId, env.BOT_TOKEN);
-           const parameterizedMiniAppUrl = `${miniAppBaseUrl}?user_id=${userId}&chat_id=${messageChatId}&sig=${signature}`;
-           await editMessageReplyMarkup(env, messageChatId, messageId, [[
-               { text: '🗓️👷‍♂️ |월간| 당직 일정 🔓열기 💥🚀', url: parameterizedMiniAppUrl }
-           ]]);
-           break;
-         default:
-           console.log(`Unknown callback data: ${data}`);
-           await answerCallbackQuery(env, callbackQueryId, '알 수 없는 요청입니다.', true);
-           break;
-       }
        return new Response("OK", { status: 200 });
      }
      return new Response("OK", { status: 200 });
    }
   
    // 🚀 REST API 라우팅 (GET/POST 요청 처리)
-   if (url.pathname === '/verify_params' && request.method === 'POST') {   // 💥💥💥 /verify_params는 반드시 POST 메서드로만 처리! 💥💥💥
-       return handleVerifyParams(request, env, GROUP_CHAT_ID_TO_ENFORCE);
+   if (url.pathname === '/verify_initdata' && request.method === 'POST') {
+    return handleVerifyInitData(request, env, GROUP_CHAT_ID_TO_ENFORCE);
    }
-   else if (url.pathname === '/api/settings') {   // 💥💥💥 /api/settings는 GET/POST 모두 가능 💥💥💥
+   if (url.pathname === '/api/settings') {   // 💥💥💥 /api/settings는 GET/POST 모두 가능 💥💥💥
      return handleSettings(request, env);
    }
-   // 💥💥💥 여기가 변경점! /api/schedule에 대한 OPTIONS 요청도 허용! 💥💥💥
+   // 💥💥💥 /api/schedule에 대한 OPTIONS 요청 허용! 💥💥💥
    else if (url.pathname === '/api/schedule') { // GET이든 OPTIONS든 일단 이 경로로 들어옴
      if (request.method === 'GET') {
          return handleSchedule(request, env);
@@ -719,10 +856,9 @@ export default {
  },
 
  async scheduled(controller, env, ctx) { // ⏰ Cloudflare Scheduler (Cron Trigger) 이벤트 핸들러
-   // 💥 CHAT_ID 대신 TELEGRAM_BOT_DEFAULT_CHAT_ID 사용 (env.CHAT_ID를 의미)
-   const currentChatId = env.CHAT_ID;
+   const currentChatId = env.GROUP_CHAT_ID;
    if (!currentChatId) {
-     console.error("CHAT_ID environment variable is not set for scheduled tasks.");
+     console.error("GROUP_CHAT_ID environment variable is not set for scheduled tasks.");
      return;
    }  
    const nowKST = convertUTCtoKST(new Date());
@@ -731,20 +867,29 @@ export default {
    const dutyInfoFull = await getDutyInfoFromSettingsKV(targetDate, env);  
    const hour = nowKST.getHours();
    const dutyType = dutyInfoFull.dutyType;
-   const isNightDutyTime = (hour >= 0 && hour < 24) && (dutyType.includes('야'));
-   const isDayDutyTime = (hour >= 0 && hour < 24) && (dutyType.includes('주'));
+
+   const isDayDutyTime = (hour >= 0 && hour < 24) && (dutyType.includes('주')); // (hour === 8)
+   const isNightDutyTime = (hour >= 0 && hour < 24) && (dutyType.includes('야'));  // (hour === 17)
    const isOffDutyTime = (hour >= 0 && hour < 24) && (dutyType.includes('비'));
-   const shouldSendMessage = isNightDutyTime || isDayDutyTime || isOffDutyTime;
+
+   const shouldSendMessage = isNightDutyTime || isDayDutyTime // || isOffDutyTime;
    if (shouldSendMessage) {
      console.log("Scheduled Trigger (KST):", nowKST.toISOString());
      console.log("Scheduled Message:", dutyInfoFull.message);    
     //  const targetUrl = 'https://notifier-pages-frontend.pages.dev/'; // Mini App 프론트엔드 URL    
-     const buttons = [
+    const BOT_USERNAME = env.BOT_USERNAME;
+    if (!BOT_USERNAME) {
+      console.error("BOT_USERNAME 환경 변수가 설정되지 않았습니다.");
+    }  
+    const targetChatId = currentChatId;
+    const startParam = `from_schedule_${targetChatId}`;
+    const url = `https://t.me/${BOT_USERNAME}?startapp=${encodeURIComponent(startParam)}`;
+    const buttons = [
        [      
-         { text: '👨‍🔧 당직 🗓 일정 👋', callback_data: 'request_mini_app_access' }   // 첫 번째 클릭은 콜백 데이터 전송 (미니앱 바로 열리지 않음)
+         { text: '👨‍🔧 당직 🗓 일정 👋', url: url }
        ]
      ];
-       await sendTelegramMessage(env, dutyInfoFull.message, currentChatId, buttons);   // 💥 sendTelegramMessage 호출 시에는 currentChatId (봇이 알림을 보내는 대상 채팅방)를 사용
+    await sendTelegramMessage(env, dutyInfoFull.message, currentChatId, buttons);   // 💥 sendTelegramMessage 호출 시에는 currentChatId (봇이 알림을 보내는 대상 채팅방)를 사용
    } else {
      console.log("시간/당직 조건 불충족 또는 '비번' (메시지 미발송):", "\n", dutyInfoFull.message, "\n", "hour", hour, "shouldSendMessage", shouldSendMessage, "\n", "dutyType.includes('야간')", dutyType.includes('야간'), "\n", nowKST.toISOString().slice(11,19), "DutyType:", dutyInfoFull.dutyType);
    }
