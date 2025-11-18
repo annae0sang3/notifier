@@ -8,367 +8,356 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     body {
-      font-family: 'Inter', 'SF Pro Display', sans-serif;
-      margin: 0;
-      background-color: #f6f7f8;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      padding-bottom: 60px;
-      text-align: center;
+        font-family: 'Inter', 'SF Pro Display', sans-serif;
+        margin: 0;
+        background-color: #f6f7f8;
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        padding-bottom: 60px;
+        text-align: center;
     }
     .container {
-      max-width: 450px;
-      width: 100%;
-      margin: 0 auto;
-      flex-grow: 1;
+        max-width: 450px;
+        width: 100%;
+        margin: 0 auto;
+        flex-grow: 1;
     }
     .header {
-      padding: 15px 16px 10px 16px;
-      position: sticky;
-      top: 0;
-      background-color: #f6f7f8;
-      z-index: 10;
+        padding: 15px 16px 10px 16px;
+        position: sticky;
+        top: 0;
+        background-color: #f6f7f8;
+        z-index: 10;
     }
     .header h1 {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #101922;
-      margin: 0 0 15px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #101922;
+        margin: 0 0 15px;
     }
     .month-selector {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
     }
     .month-selector .arrow {
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #6c757d;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6c757d;
     }
     .month-selector h2 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #101922;
-      margin: 0;
-      cursor: pointer; /* ⚛️ 연속 클릭 트리거를 위해 커서 스타일 추가 */
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #101922;
+        margin: 0;
+        cursor: pointer; /* ⚛️ 연속 클릭 트리거를 위해 커서 스타일 추가 */
     }
     .schedule-list {
-      padding: 0 16px;
-      margin-bottom: 20px;
+        padding: 0 16px;
+        margin-bottom: 20px;
     }
     .schedule-card {
-      background-color: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
-      margin-bottom: 8px;
-      padding: 8px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+        margin-bottom: 8px;
+        padding: 8px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
     }    
     /* 오늘 날짜 카드 강조 */
     .schedule-card.today {
-      border: 2px solid #137fec;
-      box-shadow: 0 2px 8px rgba(19, 127, 236, 0.2);
+        border: 2px solid #137fec;
+        box-shadow: 0 2px 8px rgba(19, 127, 236, 0.2);
     }    
     .card-date {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 70px;
-      position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 70px;
+        position: relative;
     }
     .day-num {
-      font-weight: 500;
-      font-size: 1.1rem;
-      color: #101922;
+        font-weight: 500;
+        font-size: 1.1rem;
+        color: #101922;
     }
     .day-name {
-      font-size: 0.95rem;
-      color: #6c757d;
+        font-size: 0.95rem;
+        color: #6c757d;
     }
     /* 주말 색상 */
     .day-name.weekend-sat { color: #137fec; }
     .day-name.weekend-sun { color: #dc3545; }
     /* 근무 타입 아이콘 위치 조정 (수직 중앙 정렬) */
     .duty-icon {
-      position: absolute;
-      top: 50%; /* 상단 50% 위치 */
-      transform: translateY(-50%); /* 아이콘 높이의 50%만큼 위로 이동 */
-      left: -2px; /* 좌측에서 조금 우측으로 이동 */
-      font-size: 1.1rem;
-      transition: color 0.2s;
+        position: absolute;
+        top: 50%; /* 상단 50% 위치 */
+        transform: translateY(-50%); /* 아이콘 높이의 50%만큼 위로 이동 */
+        left: -2px; /* 좌측에서 조금 우측으로 이동 */
+        font-size: 1.1rem;
+        transition: color 0.2s;
     }
     .day-icon { left: 3px; color: #ffc107; }
     .night-icon { left: 3px; color: #4a5482; }
     .mixed-icon { left: 3px; color: #f96d00; }
     /* 당직자 열 정렬 */
     .card-duties {
-      flex-grow: 1;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-left: 1px solid #eee;
-      padding-left: 1px; /* 주간당직자를 오른쪽으로 띄우기 */
-      color: #555;
-      font-size: 1.0rem;
+        flex-grow: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-left: 1px solid #eee;
+        padding-left: 1px; /* 주간당직자를 오른쪽으로 띄우기 */
+        color: #555;
+        font-size: 1.0rem;
     }
     .day-duty-col {
-      flex: 4;
-      text-align: center; /* 주간 당직자 중앙 정렬 유지 */
-      font-weight: 500;
+        flex: 4;
+        text-align: center; /* 주간 당직자 중앙 정렬 유지 */
+        font-weight: 500;
     }
     .night-duty-col {
-      flex: 6;
-      text-align: center; /* 야간 당직자를 중앙쪽으로 이동 */
-      font-weight: 500;
+        flex: 6;
+        text-align: center; /* 야간 당직자를 중앙쪽으로 이동 */
+        font-weight: 500;
     }
     /* ---------- Settings Modal / Toast / Footer ---------- */
     #settings-modal {
-      display: none; position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(3px);
-      justify-content: center; align-items: center; z-index: 1000;
-      animation: fadeIn 0.25s ease-out;
+        display: none; position: fixed; top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(3px);
+        justify-content: center; align-items: center; z-index: 1000;
+        animation: fadeIn 0.25s ease-out;
     }
     #settings-modal .modal-content {
-      background: #fff; border-radius: 18px; width: 92%; max-width: 380px;
-      padding: 24px 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-      animation: scaleUp 0.25s ease-out; position: relative; text-align: left;
-      box-sizing: border-box;
+        background: #fff; border-radius: 18px; width: 92%; max-width: 380px;
+        padding: 24px 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        animation: scaleUp 0.25s ease-out; position: relative; text-align: left;
+        box-sizing: border-box;
     }
     /* ... (Modal input, button styles) ... */
     #settings-modal input {
-      width: calc(100% - 4px); /* 💡 width 수정 (패딩 고려) */
-      box-sizing: border-box;
-      padding: 9px 10px;
-      font-size: 1rem;
-      border-radius: 8px; /* 메인 디자인과 통일성 */
-      border: 1px solid #ddd;
-      background-color: #f7f8fa; /* 배경색을 연하게 */
-      margin-top: 20px;
-      margin-bottom: 30px;
-      transition: all 0.2s;
+        width: calc(100% - 4px); /* 💡 width 수정 (패딩 고려) */
+        box-sizing: border-box;
+        padding: 9px 10px;
+        font-size: 1rem;
+        border-radius: 8px; /* 메인 디자인과 통일성 */
+        border: 1px solid #ddd;
+        background-color: #f7f8fa; /* 배경색을 연하게 */
+        margin-top: 20px;
+        margin-bottom: 30px;
+        transition: all 0.2s;
     }
     #settings-modal input:focus {
-      border-color: #137fec; /* 포커스 시 강조 색상 */
-      background-color: #fff;
-      outline: none;
+        border-color: #137fec; /* 포커스 시 강조 색상 */
+        background-color: #fff;
+        outline: none;
     }    
     .modal-buttons {
-      display: flex;
-      justify-content: flex-end; /* 오른쪽으로 배치 */
-      gap: 10px;
-      margin-top: 24px;
+        display: flex;
+        justify-content: flex-end; /* 오른쪽으로 배치 */
+        gap: 10px;
+        margin-top: 24px;
     }
     .button {
-      border: none;
-      border-radius: 8px; /* 모서리 통일 */
-      padding: 10px 16px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
+        border: none;
+        border-radius: 8px; /* 모서리 통일 */
+        padding: 10px 16px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.1s;
     }
     .button.save {
-      background-color: #137fec; /* 메인 강조 색상 */
-      color: #fff;
+        background-color: #137fec; /* 메인 강조 색상 */
+        color: #fff;
     }
     .button.cancel {
-      background-color: #6c757d; /* 회색 톤 */
-      color: #fff;
+        background-color: #6c757d; /* 회색 톤 */
+        color: #fff;
     }
     /* 호버 효과 (Mini App에서는 잘 사용되지 않지만, 웹뷰 표준을 위해 유지) */
     .button.save:hover { background-color: #0f6ed4; }
     .button.cancel:hover { background-color: #5c636a; }
-                                                                              
-
-
-                                        
-                                        .fab-container {
-                                          position: fixed;
-                                          bottom: 25px; /* 하단 여백 */
-                                          right: 25px;  /* 우측 여백 */
-                                          display: flex;
-                                          flex-direction: row-reverse; /* Today 버튼이 항상 가장 오른쪽에 오도록 */
-                                          align-items: center;
-                                          z-index: 900;
-                                        }
-                                        
-                                        .fab {
-                                          width: 56px;
-                                          height: 56px;
-                                          background-color: #137fec;
-                                          color: #fff;
-                                          border-radius: 50%;
-                                          display: flex;
-                                          align-items: center;
-                                          justify-content: center;
-                                          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-                                          text-decoration: none;
-                                          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-                                          cursor: pointer;
-                                        }
-                                        
-                                        .fab.today-fab {
-                                          background-color: #137fec; /* Today 버튼 색상 */
-                                          z-index: 902; /* 항상 위에 있도록 */
-                                        }
-                                        
-                                        /* [요청사항 3] 설정 버튼 초기 숨김 및 노출 스타일 */
-                                        .fab.settings-fab {
-                                          background-color: #6c757d; /* 설정 버튼 색상 */
-                                          /* 초기 숨김 상태 */
-                                          width: 0;
-                                          opacity: 0;
-                                          padding: 0;
-                                          margin-right: 0;
-                                          overflow: hidden;
-                                          pointer-events: none;
-                                          transform: scale(0.5);
-                                          z-index: 901;
-                                        }
-                                        
-                                        .fab.settings-fab.visible {
-                                          /* 활성화 상태 (Today 버튼을 밀어내며 나타남) */
-                                          width: 56px;
-                                          opacity: 1;
-                                          margin-right: 12px; /* 버튼 사이 간격 */
-                                          pointer-events: auto;
-                                          transform: scale(1);
-                                        }
-                                        
-                                        /* [요청사항 6] 모달 버튼 영역 재정렬 */
-                                        .modal-buttons {
-                                          display: flex;
-                                          justify-content: space-between; /* 양쪽 끝으로 정렬 */
-                                          align-items: center;
-                                          margin-top: 24px;
-                                        }
-                                        
-                                        .action-buttons {
-                                          display: flex;
-                                          gap: 10px; /* 닫기/저장 버튼 사이 간격 */
-                                        }
-                                        
-                                        /* [요청사항 6, 7] 도움말 아이콘 및 툴팁 스타일 */
-                                        .help-container {
-                                          position: relative; /* 툴팁 위치의 기준점 */
-                                        }
-                                        
-                                        .help-icon {
-                                          font-size: 1.6rem;
-                                          color: #888;
-                                          cursor: pointer;
-                                          padding: 5px; /* 클릭 영역 확보 */
-                                          transition: color 0.2s;
-                                        }
-                                        .help-icon:hover {
-                                          color: #333;
-                                        }
-                                        
-                                        .modal-tooltip {
-                                          display: none; /* 초기 숨김 */
-                                          position: absolute;
-                                          bottom: 120%; /* 아이콘 위쪽에 표시 */
-                                          left: -10px; /* 아이콘 대비 왼쪽으로 살짝 이동 */
-                                          width: 280px; /* 툴팁 너비 */
-                                          background-color: #333;
-                                          color: #fff;
-                                          padding: 12px 16px;
-                                          border-radius: 8px;
-                                          font-size: 0.9rem;
-                                          line-height: 1.5;
-                                          text-align: left;
-                                          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-                                          z-index: 1001; /* 모달 컨텐츠보다 위에 표시 */
-                                        }
-                                        
-                                        .modal-tooltip p {
-                                          margin: 0 0 8px 0;
-                                        }
-                                        .modal-tooltip p:last-child {
-                                          margin-bottom: 0;
-                                        }
-                                        
-                                        /* 툴팁 꼬리표 (말풍선처럼 보이도록) */
-                                        .modal-tooltip::after {
-                                          content: '';
-                                          position: absolute;
-                                          top: 100%; /* 툴팁 하단 중앙 */
-                                          left: 20px; /* 꼬리표 위치 */
-                                          border-width: 6px;
-                                          border-style: solid;
-                                          border-color: #333 transparent transparent transparent;
-                                        }
-                                        
-                                        .modal-tooltip.visible {
-                                          display: block; /* 툴팁 보이기 */
-                                        }
-
-
-
-
-
     
+    .fab-container {
+        position: fixed;
+        bottom: 25px; /* 하단 여백 */
+        right: 25px;  /* 우측 여백 */
+        display: flex;
+        flex-direction: row-reverse; /* Today 버튼이 항상 가장 오른쪽에 오도록 */
+        align-items: center;
+        z-index: 900;
+    }
+    
+    .fab {
+        width: 56px;
+        height: 56px;
+        background-color: #137fec;
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        text-decoration: none;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        cursor: pointer;
+    }
+    
+    .fab.today-fab {
+        background-color: #137fec; /* Today 버튼 색상 */
+        z-index: 902; /* 항상 위에 있도록 */
+    }
+    
+    /* [요청사항 3] 설정 버튼 초기 숨김 및 노출 스타일 */
+    .fab.settings-fab {
+        background-color: #6c757d; /* 설정 버튼 색상 */
+        /* 초기 숨김 상태 */
+        width: 0;
+        opacity: 0;
+        padding: 0;
+        margin-right: 0;
+        overflow: hidden;
+        pointer-events: none;
+        transform: scale(0.5);
+        z-index: 901;
+    }
+    
+    .fab.settings-fab.visible {
+        /* 활성화 상태 (Today 버튼을 밀어내며 나타남) */
+        width: 56px;
+        opacity: 1;
+        margin-right: 12px; /* 버튼 사이 간격 */
+        pointer-events: auto;
+        transform: scale(1);
+    }
+    
+    /* [요청사항 6] 모달 버튼 영역 재정렬 */
+    .modal-buttons {
+        display: flex;
+        justify-content: space-between; /* 양쪽 끝으로 정렬 */
+        align-items: center;
+        margin-top: 24px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px; /* 닫기/저장 버튼 사이 간격 */
+    }
+    
+    /* [요청사항 6, 7] 도움말 아이콘 및 툴팁 스타일 */
+    .help-container {
+        position: relative; /* 툴팁 위치의 기준점 */
+    }
+    
+    .help-icon {
+        font-size: 1.6rem;
+        color: #888;
+        cursor: pointer;
+        padding: 5px; /* 클릭 영역 확보 */
+        transition: color 0.2s;
+    }
+    .help-icon:hover {
+        color: #333;
+    }
+  
+    .modal-tooltip {
+        display: none; /* 초기 숨김 */
+        position: absolute;
+        bottom: 120%; /* 아이콘 위쪽에 표시 */
+        left: -10px; /* 아이콘 대비 왼쪽으로 살짝 이동 */
+        width: 280px; /* 툴팁 너비 */
+        background-color: #333;
+        color: #fff;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        text-align: left;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        z-index: 1001; /* 모달 컨텐츠보다 위에 표시 */
+    }
+  
+    .modal-tooltip p {
+        margin: 0 0 8px 0;
+    }
+    .modal-tooltip p:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* 툴팁 꼬리표 (말풍선처럼 보이도록) */
+    .modal-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%; /* 툴팁 하단 중앙 */
+        left: 20px; /* 꼬리표 위치 */
+        border-width: 6px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+    }
+    
+    .modal-tooltip.visible {
+        display: block; /* 툴팁 보이기 */
+    }
 
-   
     @keyframes fadeIn {
-      from { opacity: 0; } to { opacity: 1; }
+        from { opacity: 0; } to { opacity: 1; }
     }
     @keyframes scaleUp {
-      from { transform: scale(0.95); opacity: 0.8; }
-      to { transform: scale(1); opacity: 1; }
+        from { transform: scale(0.95); opacity: 0.8; }
+        to { transform: scale(1); opacity: 1; }
     }
     
     /* 아이콘과 텍스트를 감싸는 그룹을 Flex 컨테이너로 만듦 */
     .icon-text-group {
-      display: flex;         /* 이 요소를 Flexbox 컨테이너로 설정 */
-      align-items: center;   /* 자식 요소들(아이콘, 텍스트)을 세로축(교차축) 중앙에 정렬 */
-      gap: 8px;              /* 자식 요소들 사이에 8px의 간격 */
-      margin-bottom: 5px;    /* 다음 입력 필드와의 간격 조정 (필요시) */
-      /* H2나 Label의 기본 margin이 있을 수 있으니 초기화 */
+        display: flex;         /* 이 요소를 Flexbox 컨테이너로 설정 */
+        align-items: center;   /* 자식 요소들(아이콘, 텍스트)을 세로축(교차축) 중앙에 정렬 */
+        gap: 8px;              /* 자식 요소들 사이에 8px의 간격 */
+        margin-bottom: 5px;    /* 다음 입력 필드와의 간격 조정 (필요시) */
+        /* H2나 Label의 기본 margin이 있을 수 있으니 초기화 */
     }
     .icon-text-group h2,
     .icon-text-group label {
-      margin: 0;             /* h2와 label의 기본 마진을 없애서 flexbox 정렬에 방해되지 않도록 함 */
-      line-height: 1.2;      /* 텍스트의 라인 높이 조절 (취향에 따라) */
+        margin: 0;             /* h2와 label의 기본 마진을 없애서 flexbox 정렬에 방해되지 않도록 함 */
+        line-height: 1.2;      /* 텍스트의 라인 높이 조절 */
     }
 
     /* 설정 제목 아이콘과 텍스트 그룹 (옵션) */
     .icon-text-group.header-group {
-        /* 필요하면 설정 제목 부분에만 추가적인 스타일 적용 가능 */
         margin-top: 10px; /* 상단 여백 추가 등 */
     }
-                                                                            /* #access-denied {
-                                                                              display: none; /* 💥💥💥 초기에는 display: none;으로 숨김 💥💥💥 */
-                                                                              margin-top: 50px; 
-                                                                              color: #dc3545; 
-                                                                              font-weight:600;
-                                                                            } */
-    /* 💥💥💥 새로운 CSS 추가: 스크립트가 실행되기 전까지 모든 메인 콘텐츠를 숨깁니다. 💥💥💥 */
+    /* #access-denied {
+        display: none; /* 💥 초기에는 display: none;으로 숨김 💥 */
+        margin-top: 50px; 
+        color: #dc3545; 
+        font-weight:600;
+    } */
+    /* 💥 스크립트가 실행되기 전까지 모든 메인 콘텐츠를 숨김 💥 */
     /* body > *:not(#telegram-info):not(#access-denied) {
         display: none;
     } */
     #telegram-info, #access-denied {
-    position: fixed; /* 화면에 고정 */
-    top: 0;
-    left: 0;
-    width: 100vw;   /* 뷰포트 너비 전체 */
-    height: 100vh;  /* 뷰포트 높이 전체 */
-    display: flex;  /* 내용을 가운데 정렬하기 위해 flex 사용 */
-    justify-content: center; /* 수평 가운데 */
-    align-items: center;     /* 수직 가운데 */
-    background-color: rgba(255, 255, 255, 0.95); /* 반투명 흰색 배경으로 다른 UI 가리기 */
-    z-index: 1000; /* 다른 모든 UI 요소 위에 오도록 z-index 높게 설정 */
-    color: #333;
-    font-size: 1.2em;
-    text-align: center;
-    padding: 20px;
-    box-sizing: border-box; /* 패딩이 너비/높이에 포함되도록 */
+        position: fixed; /* 화면에 고정 */
+        top: 0;
+        left: 0;
+        width: 100vw;   /* 뷰포트 너비 전체 */
+        height: 100vh;  /* 뷰포트 높이 전체 */
+        display: flex;  /* 내용을 가운데 정렬하기 위해 flex 사용 */
+        justify-content: center; /* 수평 가운데 */
+        align-items: center;     /* 수직 가운데 */
+        background-color: rgba(255, 255, 255, 0.95); /* 반투명 흰색 배경으로 다른 UI 가리기 */
+        z-index: 1000; /* 다른 모든 UI 요소 위에 오도록 z-index 높게 설정 */
+        color: #333;
+        font-size: 1.2em;
+        text-align: center;
+        padding: 20px;
+        box-sizing: border-box; /* 패딩이 너비/높이에 포함되도록 */
     }
     
     /* 추가적으로 access-denied 내 p 태그에 대한 스타일도 조정할 수 있음 */
@@ -393,6 +382,17 @@
         font-size: 1.0em;
         white-space: nowrap;
     }
+    #help-tooltip p {
+    margin-bottom: 5px; /* 단락 간 간격 */
+    }
+  
+    /* p 태그를 리스트 아이템처럼 보이게 하는 클래스 */
+    .modal-tooltip .p-as-list-item {
+        display: list-item;
+        list-style-type: decimal;
+        list-style-position: outside;
+        margin-left: 25px;
+    }
 
     
   </style>
@@ -410,7 +410,7 @@
 
 
     <div id="telegram-info" style="padding: 16px; background: #eef; border-radius: 8px; margin: 16px; display: none;">
-      Telegram WebApp 정보 로딩 중...
+     ⏳ WebApp 정보 🏃‍♂️ 로딩 중...
     </div>
     
     <!-- ❗ 인증 실패 시 메시지 표시 -->
@@ -458,6 +458,12 @@
                 <p>3. 근무자가 홀수일 경우에는 123123 순서,
                       짝수일 경우에는 12342143 순서로 반복됨.</p>
               </div>
+              <div id="help-tooltip" class="modal-tooltip">
+                <p class="p-as-list-item">기준일은 근무주기의 첫 날(주)로 설정할 것.</p>
+                <p class="p-as-list-item">기준일부터 근무자 명단 순서로 당직 배정 됨.</p>
+                <p class="p-as-list-item">근무자가 홀수일 경우에는 123123 순서,
+                      짝수일 경우에는 12342143 순서로 반복됨.</p>
+              </div>
             </div>
             
             <div class="action-buttons">
@@ -471,29 +477,20 @@
 
   <div id="toast"></div>
 
-                                                                 
+    <div class="fab-container">
+      <a id="fab-today" class="fab today-fab" href="#" onclick="goToToday(); return false;">
+        <span class="material-icons">today</span>
+      </a>
+      <a id="fab-settings" class="fab settings-fab" href="#" onclick="openSettingsModal(); return false;">
+        <span class="material-icons">settings</span>
+      </a>                            
+    </div>
 
-
-                          <div class="fab-container">
-                            <a id="fab-today" class="fab today-fab" href="#" onclick="goToToday(); return false;">
-                              <span class="material-icons">today</span>
-                            </a>
-                            <a id="fab-settings" class="fab settings-fab" href="#" onclick="openSettingsModal(); return false;">
-                              <span class="material-icons">settings</span>
-                            </a>                            
-                          </div>
-
-
-
-  
   <script>
       const DAYS = ['일', '월', '화', '수', '목', '금', '토']; 
       let currentDate = new Date(); 
       const WORKER_API_BASE = 'https://notifier-worker-backend.annae0sang3.workers.dev';
 
-      // =========================================================================
-      // ✅ 텔레그램 WebApp 및 사용자 검증 로직 (URL 파라미터 기반으로 변경)
-      // =========================================================================
       let currentUserId = null; // 💥 검증된 사용자 ID를 저장할 전역 변수
       let currentChatId = null; // 💥 현재 미니앱이 열린 채팅방 ID 저장할 전역 변수
 
@@ -509,8 +506,8 @@
           mainContentElement.style.display = 'none';
           accessDeniedDiv.style.display = 'none'
           fabContainer.style.display = 'none';                                                                                            
-          telegramInfoDiv.style.display = 'block'; // 🚨 초기에는 '정보 로딩 중...' 메시지를 보여줄 것이므로 'block'으로 시작
-          telegramInfoDiv.textContent = 'Telegram WebApp 정보 로딩 중...'; // 로딩 텍스트 설정
+          telegramInfoDiv.style.display = 'block'; // 🚨 초기에는 '정보 🏃‍♂️ 로딩 중...' 메시지를 보여줄 것이므로 'block'으로 시작
+          telegramInfoDiv.textContent = '📅 월간 일정 정보 🏃‍♂️ 로딩 중...'; // 로딩 텍스트 설정
           // 텔레그램 WebApp 스크립트 로드 여부 및 존재 여부 확인
           if (typeof Telegram === 'undefined' || !window.Telegram.WebApp) {
             console.log('❌ 텔레그램 미니앱 환경이 아닙니다. 일반 웹페이지로 열렸습니다.');
@@ -522,18 +519,18 @@
           // 텔레그램 WebApp 준비 완료 알림
           console.log("DEBUG: Telegram WebApp is ready to proceed.");
                                                                       // window.Telegram.WebApp.ready();           
-                                                                      // // 💥💥💥 URL 쿼리 파라미터에서 user_id, chat_id, sig를 추출합니다! 💥💥💥
+                                                                      // // 💥💥💥 URL 쿼리 파라미터에서 user_id, chat_id, sig를 추출 💥💥💥
                                                                       // const urlParams = new URLSearchParams(window.location.search);
                                                                       // const userId = urlParams.get('user_id');
                                                                       // const chatId = urlParams.get('chat_id');
                                                                       // const signature = urlParams.get('sig'); // 보안 서명
                                                                       // console.log(`DEBUG_PARAMS: userId=${userId}, chatId=${chatId}, signature=${signature}`);
-                                                      // let currentUserId = null;
-                                                      // let currentChatId = null;
+                                                                // let currentUserId = null;
+                                                                // let currentChatId = null;
           const tg = window.Telegram.WebApp;
           const initData = tg.initData; // 텔레그램이 자동으로 붙여주는 검증용 데이터 (안전한 데이터)
         
-          // // 💥💥💥 임시로 이 코드를 추가해서 initData를 화면에 직접 표시합니다. 💥💥💥
+          // // 💥💥💥 임시로 이 코드를 추가해서 initData를 화면에 직접 표시 💥💥💥
           // const debugDiv = document.createElement('div');
           // debugDiv.style.position = 'fixed';
           // debugDiv.style.bottom = '10px';
@@ -547,9 +544,9 @@
           // debugDiv.style.wordBreak = 'break-all';
           // debugDiv.textContent = `Full InitData: ${initData || 'Not Available'}`;
           // document.body.appendChild(debugDiv);
-          // // 💥💥💥 여기까지 추가 💥💥💥
+          // // 💥💥💥 여기까지 💥💥💥
         
-          console.log("DEBUG_FULL_INITDATA_FROM_FRONTEND:", initData); // 💥💥💥 이 줄을 추가!
+          console.log("DEBUG_FULL_INITDATA_FROM_FRONTEND:", initData); 
           console.log("initData:", tg.initData);
           console.log("initDataUnsafe:", tg.initDataUnsafe);        
           //console.log(`DEBUG_PAGES_FETCH_URL: ${WORKER_API_BASE}/verify_params`);
@@ -569,7 +566,7 @@
             return; // initData 없으면 여기서 중단
           }
           try {
-              // 💥💥💥 Pages에서 Workers로 전송할 JSON 바디를 미리 찍어봅니다. 💥💥💥
+              // 💥💥💥 Pages에서 Workers로 전송할 JSON 바디를 미리 확인 💥💥💥
               const bodyToSend = JSON.stringify({ initData: initData }); // initData 전체 문자열을 백엔드로 전송
                                                                                 // const bodyToSend = JSON.stringify({ userId, chatId, signature });
               console.log("DEBUG_PAGES_BODY_TO_SEND:", bodyToSend); 
@@ -580,18 +577,18 @@
                                                                                 //     headers: { 'Content-Type': 'application/json' },
                                                                                 //     body: JSON.stringify({ userId, chatId, signature }), 
                                                                                 // });
-              const response = await fetch(`${WORKER_API_BASE}/verify_initdata`, { // 🚨 엔드포인트명 변경
+              const response = await fetch(`${WORKER_API_BASE}/verify_initdata`, { 
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ initData: initData }), // initData 전체를 바디로 보냄
               });
               const verificationResult = await response.json();
 
-              if (verificationResult.ok) {       // ✅ 검증 성공 시                  
+              if (verificationResult.ok) {                 
                   const user = verificationResult.user || {}; // 백엔드에서 파싱된 user 객체
                   currentUserId = user.id; // // 백엔드에서 검증된 user.id 사용
                   currentChatId = verificationResult.chat_id; // 백엔드에서 검증된 chat_id 사용 (그룹인 경우)
-                                                                                // currentChatId = chatId; // 💥 전역 변수에 저장
+                                                                                // currentChatId = chatId; 
                   console.log(`✓ 인증 완료! 사용자 ID: ${currentUserId}, 그룹 ID: ${currentChatId}`);
                                                                                 // console.log(`✓ 인증 완료! 사용자 ID: ${userId}, 그룹 ID: ${chatId}`);  
                   const initDataParams = new URLSearchParams(initData);
@@ -600,15 +597,15 @@
                     startParamValue = decodeURIComponent(initDataParams.get('start_param'));
                     console.log(`✅ 검증된 start_param: ${startParamValue}`);
                     // 여기서 startParamValue ('from_schedule_<chatId>' 형식)를 사용해서
-                    // 미니앱 내부 로직을 조절할 수 있습니다.
-                    // 예: startParamValue에서 `<chatId>` 부분을 추출하여 특정 그룹의 스케줄을 보여줄 수 있습니다.
+                    // 미니앱 내부 로직을 조절 가능
+                    // 예: startParamValue에서 `<chatId>` 부분 추출 가능
                     const parsedChatIdFromStartParam = startParamValue.split('_')[2];
                     if (parsedChatIdFromStartParam && parsedChatIdFromStartParam !== currentChatId) {
                         console.warn(`주의: startParam의 chatId(${parsedChatIdFromStartParam})와
                                       검증된 initData의 chatId(${currentChatId})가 다릅니다.
                                       보안상 initData의 chatId를 사용합니다.`);
-                        // 실제 상황에 따라 어떤 chat ID를 우선할지 결정해야 합니다.
-                        // 일반적으로 initData에 있는 값이 더 신뢰할 수 있습니다.
+                        // 실제 상황에 따라 어떤 chat ID를 우선할지 결정
+                        // 일반적으로 initData에 있는 값이 더 신뢰
                         }
                     }
     
@@ -669,32 +666,28 @@
           }
           // 🔑 [END] 설정 버튼 토글 트리거 리스너 추가
       });
-
-                                                                              
-                                                                                   
-
-                                  
+                              
                                   // 💾 [START] 설정 토글 함수 정의
                                   function toggleSettingsVisibility() {
                                    
                                     const settingsFab = document.getElementById('fab-settings');
                                     settingsFab.classList.toggle('visible');
                                   
-                                    // [요청사항 4] 버튼이 '보이게' 될 때만 외부 클릭 리스너를 추가
+                                    // 버튼이 '보이게' 될 때만 외부 클릭 리스너를 추가
                                     if (settingsFab.classList.contains('visible')) {
-                                      // setTimeout을 0으로 주어, 현재 클릭 이벤트가 먼저 완료된 후 리스너를 등록합니다.
+                                      // setTimeout을 0으로 주어, 현재 클릭 이벤트가 먼저 완료된 후 리스너를 등록
                                       setTimeout(() => {
                                         document.addEventListener('click', hideSettingsOnClickOutside);
                                       }, 0);
                                     } else {
-                                      // 버튼이 '숨겨질' 때는 리스너를 즉시 제거합니다.
+                                      // 버튼이 '숨겨질' 때는 리스너를 즉시 제거
                                       document.removeEventListener('click', hideSettingsOnClickOutside);
                                     }
                                   }
                                   // 💾 [END] 설정 토글 함수 정의
 
                   
-      // 월/년 헤더를 업데이트합니다.
+      // 월/년 헤더를 업데이트
       function updateMonthHeader() {
           const options = { year: 'numeric', month: 'long' };
           document.getElementById('current-month-year').textContent = currentDate.toLocaleString('ko-KR', options);
@@ -711,7 +704,7 @@
           renderSchedule();
           showToast(`${currentDate.getFullYear()}년 ${currentDate.getMonth() + 1}월`);
       }
-      // 월의 마지막 날짜를 가져옵니다.
+      // 월의 마지막 날짜를 가져옴.
       function getDaysInMonth(date) {
           return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
       }
@@ -724,7 +717,7 @@
                                   tooltip.classList.toggle('visible');
                                 }
                                 
-                                // [요청사항 4] 설정 버튼 외 영역 클릭 시 버튼 숨김 처리 함수
+                                // 설정 버튼 외 영역 클릭 시 버튼 숨김 처리 함수
                                 function hideSettingsOnClickOutside(event) {
                                     const settingsFab = document.getElementById('fab-settings');
                                     const monthYearHeader = document.getElementById('current-month-year'); // 트리거 영역
@@ -740,7 +733,7 @@
 
     
     
-      // 오늘의 날짜 카드에 스크롤합니다.
+      // 오늘의 날짜 카드에 스크롤
       function scrollToTodayCard() {
         const todayCard = document.querySelector('.schedule-card.today');
         const header = document.querySelector('.header');
@@ -767,7 +760,7 @@
         });
       }
 
-      // 스케줄 카드를 생성합니다. 💥 백엔드 응답 형식에 맞춰 item.day, item.night1, item.night2로 수정했습니다.
+      // 스케줄 카드를 생성 💥 백엔드 응답 형식에 맞춰 item.day, item.night1, item.night2로 수정
       function createDutyCard(dayNum, dayName, dateObj, dutyData = null) {
         const today = new Date();
         const isToday = dateObj.getDate() === today.getDate() &&
@@ -790,7 +783,7 @@
         }
 
 
-        // 💥💥💥 날짜 영역 HTML 구조 변경: 아이콘을 card-date 안에 날짜보다 먼저 위치시킵니다. 💥💥💥
+        // 💥💥💥 날짜 영역 HTML 구조 변경: 아이콘을 card-date 안에 날짜보다 먼저 위치 💥💥💥
         cardHtml += `
             <div class="card-date">
                 ${dutyIconHtml} <!-- 💥 아이콘은 여기에 위치! 💥 -->
@@ -799,7 +792,6 @@
             </div>
         `;
 
-        // 💥💥💥 스케줄 데이터 처리 로직은 그대로 유지 💥💥💥
         if (dutyData && (dutyData.day || dutyData.night1 || dutyData.night2)) {
             cardHtml += `
                 <div class="card-duties">
@@ -832,8 +824,8 @@
         return cardHtml;
       }
 
-      // 스케줄을 렌더링하고, 필요 시 오늘 날짜로 스크롤합니다.
-      // 💥 currentUserId와 currentChatId를 사용하여 백엔드 요청 시 활용합니다.
+      // 스케줄을 렌더링하고, 필요 시 오늘 날짜로 스크롤
+      // 💥 currentUserId와 currentChatId를 사용하여 백엔드 요청 시 활용
       // @param {boolean} [scrollToToday=false] 렌더링 후 오늘 날짜로 스크롤할지 여부
       async function renderSchedule(scrollToToday = false) { 
           // 💥 검증되지 않은 사용자 ID라면 스케줄 로드를 중단합니다.
@@ -857,7 +849,7 @@
 
           try {
               const res = await fetch(`${WORKER_API_BASE}/api/schedule?start=${start}&end=${end}`, {
-                  // 백엔드에서 사용자별 스케줄 로직이 필요한 경우, userId와 chatId를 헤더로 보낼 수 있습니다.
+                  // 백엔드에서 사용자별 스케줄 로직이 필요한 경우, userId와 chatId를 헤더로 보낼 수 있음.
                   headers: { 'X-User-Id': currentUserId, 'X-Chat-Id': currentChatId } 
               });            
               // 💥💥💥 스케줄 로딩 디버깅 로그 💥💥💥
@@ -936,34 +928,26 @@
             showToast('Failed to load settings.');
         }
       }
-                                                                              
-                                                                                   
-
-
-
-                                          
+                                                                                               
                                           
                                           function closeSettingsModal() {
                                             document.getElementById('settings-modal').style.display = 'none';
-                                            
-                                           
-                                          
-                                            // ↓↓↓ [요청사항 5] 새 로직 추가 ↓↓↓
+                               
+                                            // ↓↓↓ 새 로직 추가 ↓↓↓
                                             const settingsFab = document.getElementById('fab-settings');
                                             if (settingsFab.classList.contains('visible')) {
                                               settingsFab.classList.remove('visible');
                                             }
-                                            // [요청사항 4] 모달 닫힐 때 외부 클릭 리스너도 확실히 제거
+                                            // 모달 닫힐 때 외부 클릭 리스너도 확실히 제거
                                             document.removeEventListener('click', hideSettingsOnClickOutside);
                                           
-                                            // [요청사항 7] 모달 닫힐 때 툴팁도 숨김
+                                            // 모달 닫힐 때 툴팁도 숨김
                                             const tooltip = document.getElementById('help-tooltip');
                                             if (tooltip.classList.contains('visible')) {
                                               tooltip.classList.remove('visible');
                                             }
                                           }
 
-    
       async function saveDutyCycle() {
         const dutyCycle = document.getElementById('duty-cycle').value;
         const dutyBaseDate = document.getElementById('duty-base-date').value;
@@ -1005,7 +989,7 @@
               document.body.appendChild(toast);
           }
       
-          // 💥💥💥 기존 타이머가 있다면 클리어 (토스트가 사라지지 않는 문제 해결 핵심!) 💥💥💥
+          // 💥💥💥 기존 타이머가 있다면 클리어 (토스트가 사라지지 않는 문제 해결? ) 💥💥💥
           if (toastTimeoutId) {
               clearTimeout(toastTimeoutId);
               toastTimeoutId = null;
@@ -1018,9 +1002,9 @@
       
           // 지정된 시간(duration) 후 토스트를 사라지게 하는 타이머 설정
           toastTimeoutId = setTimeout(() => {
-              toast.style.opacity = '0'; // 투명하게 만듭니다 (CSS 트랜지션 시작)
-              // opacity 트랜지션이 완료될 시간을 기다린 후 요소를 완전히 숨깁니다.
-              // CSS transition의 duration과 동일하게 맞춥니다. (0.3s = 300ms)
+              toast.style.opacity = '0'; // 투명하게 (CSS 트랜지션 시작)
+              // opacity 트랜지션이 완료될 시간을 기다린 후 요소를 완전히 숨김.
+              // CSS transition의 duration과 동일하게 (0.3s = 300ms)
               setTimeout(() => {
                   // 이 시점에 opacity가 0이 아니면 다른 토스트가 시작됐을 수 있으므로 확인
                   if (toast.style.opacity === '0') { 
@@ -1030,9 +1014,10 @@
               }, 1000); // CSS transition-duration 값과 동일하게 설정
           }, duration); // ${duration}ms 후에 사라지기 시작
       }
+    
       // 💥💥💥 스와이프 💥💥💥      
       let touchStartX = 0;
-      const SWIPE_THRESHOLD = 80;                   // 스와이프로 인식할 최소 이동 거리 (픽셀)  
+      const SWIPE_THRESHOLD = 90;                   // 스와이프로 인식할 최소 이동 거리 (픽셀)  
       const scheduleContainer = document.querySelector('.container');  
       scheduleContainer.addEventListener('touchstart', (e) => {
           touchStartX = e.touches[0].clientX; // 터치 시작 지점의 X 좌표 저장
@@ -1046,7 +1031,8 @@
               nextMonth(); // 왼쪽으로 스와이프 (다음 달로 이동)
           }
       });
-      // 💥💥💥 스와이프 끝 💥💥💥      
+      // 💥💥💥 스와이프 끝 💥💥💥   
+    
     </script>
 </body>
 </html>
